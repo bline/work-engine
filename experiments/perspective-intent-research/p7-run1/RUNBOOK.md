@@ -1,6 +1,6 @@
 # P7 run 1: execution runbook
 
-The deterministic procedure for executing the frozen protocol ([PROTOCOL.md](PROTOCOL.md)). The **executor** is the coordinating Pi session. It launches agents and feeds their outputs and native run directories to `pipeline.py`. The **scorer** is a fresh `p7-scorer` agent per output. The **adjudicator** is the operator. Nothing here runs until the operator gives the separate execution go-ahead (PROTOCOL §10).
+The deterministic procedure for executing the frozen protocol ([PROTOCOL.md](PROTOCOL.md)). The **executor** is the coordinating Pi session. It launches agents through role_host's Claude subscription container lane, and gives `pipeline.py` each launch's host state root and session id. The pipeline reads the receipt and the output from the host records. The **scorer** is a fresh `p7-scorer` agent per output. The **adjudicator** is the operator. Nothing here runs until the operator gives the separate execution go-ahead (PROTOCOL §10).
 
 All commands run from the repository root. `P=experiments/perspective-intent-research/p7-run1`.
 
@@ -21,96 +21,128 @@ All commands run from the repository root. `P=experiments/perspective-intent-res
 2. The board has been read, and no claim conflicts with this run.
 3. The operator has given the execution go-ahead.
 
-## 1. Install the agent definitions
+## 1. Agent prompts
 
-Copy `$P/agents/p7-arm.md` and `$P/agents/p7-scorer.md` to `~/.pi/agent/agents/`, and confirm that their SHA-256 equals `asset_digests` in `runs/plan.json`. Each definition fixes:
-- an empty `tools` allowlist;
-- `systemPromptMode: replace`;
-- no project or global context and no skills;
-- only the Claude provider extension;
-- fresh context.
+`$P/agents/p7-arm.md` and `$P/agents/p7-scorer.md` each hold one agent's exact system prompt and nothing else. Their SHA-256 is in `asset_digests` in `runs/plan.json`. Nothing is installed: the prompt is passed on each launch (§2), and the receipt compares the launched prompt with the file.
 
-## 2. Launch contract and the supervisor bridge
+## 2. Launch contract
 
-Every smoke, calibration, arm, fallback and scorer launch uses:
-- the `subagent` tool with agent `p7-arm` (or `p7-scorer` for scoring);
-- `model: "claude-sdk/claude-opus-5-5:high"`, with no fallback model;
-- `options: {context: "fresh", agentScope: "user"}`;
-- `cwd` set to the empty scratch directory `~/cbm-work/p7-run1-scratch/`, outside the repository;
-- the task text exactly as in the task file, passed unchanged;
-- `async: true`, collected on native completion.
+Every smoke, calibration, arm, fallback and scorer launch is one fresh, single-turn Pi session on the Claude subscription container lane of `skills/manual-orchestration/scripts/role_host.py` ([Pi host reference](../../../skills/manual-orchestration/references/pi-host.md)). It bills the Claude subscription, never an API key; the lane refuses rather than falling back to extra usage, and has no fallback model.
 
-The installed `subagent` tool (pi-subagents 0.89.0) has no per-launch `intercomBridge` override. That override exists only on the extension delegation API, which this executor does not call. No global configuration is edited.
+```
+H=~/cbm-work/p7-run1-host       # role_host state root for this run only (host-only records)
+S=~/cbm-work/p7-run1-scratch    # empty scratch cwd, outside the repository; the same for every launch
+A=p7-arm                        # p7-scorer for scoring
+python3 skills/manual-orchestration/scripts/role_host.py --state $H launch pi \
+  --cwd $S --name <label> --prompt-file <task file> \
+  --auth subscription --container --max-requests 1 \
+  --host-arg=--model --host-arg=claude-sdk/claude-opus-5-5 --host-arg=--thinking --host-arg=high \
+  --host-arg=--no-tools --host-arg=--no-skills --host-arg=--no-context-files \
+  --host-arg=--system-prompt "--host-arg=$(cat $P/agents/$A.md)"
+```
 
-The bridge is therefore excluded by positive receipt evidence, not by marker words:
-- **Tools:** an active bridge adds `contact_supervisor` to the child's declared tools, and the receipt requires every system message to declare no tools.
-- **Prompt:** an active bridge appends its instruction to the system prompt, and the receipt requires the system content to equal the digest pinned from calibration (§4).
+- The task file is passed unchanged. For the smoke test it is a file holding `Reply with the single word READY.`
+- `<label>` is the run, task or score id, for the operator only.
+- The launch prints the session id. Wait for `role_host.py --state $H status pi <sid>` to leave `running` (a background watch, not a foreground loop), then `role_host.py --state $H retire pi <sid>`, then record it with the pipeline command for its stage.
+- The session is never delivered a second message.
 
-If calibration shows bridge content or a bridge tool, the run stops before any counted launch, and the operator decides on an isolated configuration.
+What this lane removes: no subagent extension, supervisor bridge, acceptance contract or intercom runs. Pi loads only the pinned Claude provider extension (`--no-extensions`), runs in a networkless container with a placeholder credential, and reaches Anthropic only through the host egress proxy, which injects the real credential.
 
-**Output file.** After each launch, the executor writes the run's final assistant text, as reported natively, to a file. That file is the `OUTPUT_FILE` given to the pipeline, and the receipt checks it against the final assistant text in `events.jsonl`.
+**Receipt.** `pipeline.py` reads the receipt from the role_host records, outside the model. It runs `role_host.py --state $H status pi <sid>` (a local, read-only view) and reads the files it names.
 
-**Receipt.** `pipeline.py` reads the receipt from the native async run directory (`status.json`, `events.jsonl`), outside the model. It sorts findings into three classes:
+**Host-only evidence**, written by role_host and its egress proxy outside the container:
+- the turn spec, with Pi's exact argv;
+- the durable turn intent;
+- the proxy log, with one admission row and one disposition row per request.
+
+It establishes:
+- **launch options:** exactly `--model`, `--thinking high`, `--no-tools`, `--no-skills`, `--no-context-files` and `--system-prompt` equal to the agent's prompt file, with a request cap of 1;
+- **tool availability:** the request to Anthropic carried an empty tool list;
+- **requests:** exactly one request was admitted, and it was settled;
+- **context:** the request's system-prompt digest, effort and message count;
+- **served model:** the first `message_start` model, verified;
+- **billing:** the subscription verdict;
+- **usage:** the provider-reported tokens and the latency.
+
+**Pi's events file** is written by Pi inside the container. The model has no tools to alter it. It supplies:
+- the session header;
+- the system sections (exactly `preamble` and `cwd`, with the preamble equal to the agent's prompt);
+- the single user message carrying the task;
+- tool executions;
+- the provider, model and effort of each assistant message;
+- the final assistant text.
+
+The pipeline writes that final text to the record as the output. The executor supplies no output text.
+
+Findings are sorted into three classes:
 
 - **Violation** (`invalid_receipt`, stop):
-  - wrong agent;
-  - wrong step model or thinking;
-  - any assistant call on a different provider, model or effort;
-  - any declared tool at any system message;
-  - any tool execution;
+  - any launch option other than the contract, or another prompt;
+  - a request cap other than 1;
+  - more than one request, turn, user message or assistant message;
+  - a request declaring tools, or any tool execution;
+  - another model or effort, requested or served;
+  - a billing verdict of `refused`, or a lane refusal;
   - system sections other than `preamble` and `cwd`;
-  - system content or user wrapper different from the pinned expectation;
-  - more than one step or user message;
+  - a system digest, message count or user wrapper different from the pinned expectation;
   - a user message not carrying the planned task text;
-  - an output file different from the final assistant text.
+  - a pending turn intent role_host has no record of.
 - **Provider failure** (`provider_failure`):
-  - the run did not complete;
-  - non-zero exit;
-  - no assistant message;
-  - an error stop;
-  - empty final text.
+  - the request did not complete (an HTTP or stream error);
+  - no request reached the provider;
+  - the turn failed;
+  - no assistant message, an error stop, or empty final text.
 - **Unestablished** (`receipt_unestablished`, stop):
-  - required evidence is missing: no run id, no system message, no `toolsAdded` record, no recorded context or skills, malformed event lines;
-  - the expectations in `receipt_expectations.json` are not pinned.
+  - required evidence is missing: an unreadable status, spec, intent, proxy log or events file;
+  - a request admitted but not settled;
+  - a billing verdict that is not established, or usage not reported;
+  - the container's removal not recorded;
+  - the session still running;
+  - the expectations in `receipt_expectations.json` not pinned.
 
   Missing evidence is never read as zero.
 
 Each record also stores:
-- the native run id, session id and session file;
-- the digests of `status.json` and `events.jsonl`;
-- the system content digest and the user wrapper digest;
+- the host state root and session id;
+- the digests of the status, spec, proxy log and events file;
+- the environment fingerprint;
+- the request's system digest and message count;
+- the user wrapper digest;
+- the per-request summaries;
 - usage.
 
-A native run id can be bound to only one record. Raw private reasoning is not archived. The run directory is retention-managed, so it is recorded promptly after completion.
+A session id can be bound to only one record. Raw private reasoning is not archived. The host state root stays outside the repository and is kept until the run's report is written.
 
 ## 3. Smoke test (first step after the go-ahead)
 
-Launch `p7-arm` once, under the contract, with the task `Reply with the single word READY.` Then run:
+Launch `p7-arm` once and `p7-scorer` once, under the contract, each with the task `Reply with the single word READY.` Record each one:
 
 ```
-python3 -I -B $P/pipeline.py record-smoke <output-file> <run-dir>
+python3 -I -B $P/pipeline.py record-smoke $H <arm-sid>
+python3 -I -B $P/pipeline.py record-smoke $H <scorer-sid> p7-scorer
 ```
 
-It must exit 0. This requires a clean receipt in calibration mode (unpinned digests allowed) and a final text of exactly `READY`.
+Each must exit 0. This requires a clean receipt in calibration mode (unpinned digests allowed) and a final text of exactly `READY`. The scorer smoke is the scorer's calibration observation; calibration tasks (§4) launch only `p7-arm`.
+
+`runs/smoke/1.json` is the failed smoke of the superseded pi-subagents route (supervisor bridge active, acceptance contract injected, no tool manifest). It is kept as a disclosed paid call and is not a smoke of this route.
 
 ## 4. Calibration batch (disclosed, not counted)
 
 Run before any counted launch, after the rubric and inputs are frozen. Launch one run of each of the 15 tasks under the contract, and record each one:
 
 ```
-python3 -I -B $P/pipeline.py record-calibration <task_id> <output-file> <run-dir>
+python3 -I -B $P/pipeline.py record-calibration <task_id> $H <sid>
 ```
 
 Records go to `runs/calibration/`, separate from the run ledger. They hold:
-- receipt observations, including the observed system content and user wrapper digests;
+- receipt observations, including the request's system digest and message count and the user wrapper digest;
 - validity under the strict quote policy, with every quote failure listed;
 - leakage alerts;
 - output size.
 
 From these records the operator decides, and records in PROTOCOL §5 and `receipt_expectations.json` (`"pinned": true`):
-- **Expected digests:** the system content digest per agent and the user wrapper digest.
+- **Expected digests:** the system digest per agent (the arm's from calibration, the scorer's from its smoke), the request message count and the user wrapper digest. Each must be one value across all observations; a spread stops the run for diagnosis.
 - **Quote policy:** `comparator.QUOTE_POLICY`.
-- **Bridge:** whether a bridge appeared.
 
 Then re-freeze (new commit and digests), and re-run `build_tasks.py --check` and the tests. Calibration outputs are never scored or counted, and are reported as calibration.
 
@@ -119,7 +151,7 @@ Then re-freeze (new commit and digests), and re-run `build_tasks.py --check` and
 Launch runs in `execution_order` from `runs/plan.json`, a seeded interleaving. For each run:
 
 ```
-python3 -I -B $P/pipeline.py record-attempt <run_id> <output-file> <run-dir>
+python3 -I -B $P/pipeline.py record-attempt <run_id> $H <sid>
 ```
 
 Status is decided by priority: a receipt status first, then `suspected_leakage`, then the output's own validity. Validity and leakage are always assessed independently and both are recorded.
@@ -159,7 +191,7 @@ python3 -I -B $P/pipeline.py fallback-tasks <run_id>
 This fixes the target list once, from the original extraction, bound to that attempt's output digest. Launch each task file once, under the arm contract, and record it:
 
 ```
-python3 -I -B $P/pipeline.py record-fallback <run_id> <index> <output-file> <run-dir>
+python3 -I -B $P/pipeline.py record-fallback <run_id> <index> $H <sid>
 ```
 
 Each reply is checked against the target at its own index: same entry and property, a legal status, string values, a non-blank reason. A reply naming another target, or one that is malformed, is recorded as `invalid_response` and resolves nothing. A provider failure gets one replacement.
@@ -194,7 +226,7 @@ This writes batch `runs/scores/batch-<k>/` in seeded order, one task per valid f
 Launch one fresh `p7-scorer` per task, and record it:
 
 ```
-python3 -I -B $P/pipeline.py record-score <score_id> <output-file> <run-dir>
+python3 -I -B $P/pipeline.py record-score <score_id> $H <sid>
 ```
 
 A reply is **invalid** (`invalid_reply`, one replacement allowed) unless it has:

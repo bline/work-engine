@@ -19,59 +19,94 @@ import pipeline  # noqa: E402
 SCHEMA = "obligation-extract/v3"
 DOCS = {"DOC-1": "The worker must delete its file. Someone must confirm the file is gone."}
 REVIEW_DOCS = {"DOC-1": "The worker must delete its file.", "DOC-2": "The review requires the worker to delete its file."}
-PREAMBLE_CONTENT = "You answer only from the documents."
-SECTIONS = {"preamble": PREAMBLE_CONTENT, "cwd": "/scratch"}
+SYSTEM_SHA = "a" * 64
+FP = "f" * 64
 
 
 def pinned_expectations():
     exp = json.loads(json.dumps(pipeline.load_json(os.path.join(HERE, "receipt_expectations.json"))))
-    digest = pipeline.sha256(json.dumps([PREAMBLE_CONTENT], ensure_ascii=False))
     for a in exp["agents"].values():
-        a["system_content_sha256"] = digest
+        a["system_sha256"] = SYSTEM_SHA
+    exp["request_messages"] = 2
     exp["user_wrapper_sha256"] = pipeline.sha256("{{TASK}}")
     exp["pinned"] = True
     return exp
 
 
+def fake_host_status(state, session_id):
+    with open(os.path.join(state, f"status-{session_id}.json")) as f:
+        return f.read()
+
+
 class Fixture:
+    """Synthetic role_host records for one claude-sdk container launch: status, spec, intent,
+    host proxy log and Pi events. Keyword arguments inject one fault each."""
+
     def __init__(self, base):
         self.base, self.n = base, 0
 
-    def run_dir(self, task, output, agent="p7-arm", tools_added=(), sections=None, model="claude-sdk/claude-opus-5-5",
-                provider="claude-sdk", assistant_model="claude-opus-5-5", skills=None, tool_execs=0, state="complete",
-                exit_code=0, users=1, assistant=True, drop=(), native_id=None):
+    def launch(self, task, output, agent="p7-arm", native_id=None, state="idle", kind="pi_container_turn", turn=1,
+               model="claude-sdk/claude-opus-5-5", extra_argv=(), prompt=None, max_requests=1, admitted=1,
+               tool_names=(), effort="high", system_sha=SYSTEM_SHA, messages=2, request_model="claude-opus-5-5",
+               response_model="claude-opus-5-5", verdict="allowed", disposition="completed", refused=(),
+               evidence="complete", outcome="completed", removed=True, sections=None, users=1, tool_execs=0,
+               provider="claude-sdk", assistant_model="claude-opus-5-5", assistant=True, stop="stop", drop=()):
         self.n += 1
-        d = os.path.join(self.base, f"rd{self.n}")
-        os.makedirs(d)
-        step = {"agent": agent, "model": model, "thinking": "high", "exitCode": exit_code, "context": "fresh",
-                "skills": skills or [], "sessionFile": f"/s/{self.n}.jsonl", "tokens": {"input": 10, "output": 5}}
-        for k in drop:
-            step.pop(k, None)
-        with open(os.path.join(d, "status.json"), "w") as f:
-            json.dump({"runId": native_id or f"run-{self.n}", "state": state, "steps": [step], "launchContractDigest": "x"}, f)
-        system = {"role": "system", "content": PREAMBLE_CONTENT, "sections": SECTIONS if sections is None else sections,
-                  "toolsAdded": list(tools_added)}
-        if "toolsAdded" in drop:
-            system.pop("toolsAdded")
-        events = [] if "system" in drop else [{"type": "message_end", "message": system}]
+        sid = native_id or f"sid-{self.n}"
+        root = os.path.join(self.base, f"host{self.n}")
+        hdir, cdir = os.path.join(root, "h"), os.path.join(root, "c")
+        os.makedirs(hdir)
+        os.makedirs(cdir)
+        files = {"spec": os.path.join(hdir, "turn-1.spec.json"), "proxy_log": os.path.join(hdir, "turn-1.proxy.jsonl"),
+                 "events": os.path.join(cdir, "turn-1.events.jsonl")}
+        prompt = pipeline.agent_prompt(agent) if prompt is None else prompt
+        argv = ["--mode", "json", "--session-id", sid, "--session-dir", "/s", "--no-extensions", "--no-approve",
+                "-e", "/ext", "-e", "/tier.ts", "--model", model, "--thinking", "high", "--no-tools", "--no-skills",
+                "--no-context-files", "--system-prompt", prompt, *extra_argv, "--name", "p7"]
+        spec = {"session_id": sid, "turn": 1, "cwd": "/scratch", "provider": "claude-sdk", "model_id": "claude-opus-5-5",
+                "max_requests": max_requests, "environment": {"fingerprint": {"sha256": FP}}, "pi_argv": argv}
+        if "spec" not in drop:
+            with open(files["spec"], "w") as f:
+                json.dump(spec, f)
+            with open(os.path.join(hdir, "turn-1.intent.json"), "w") as f:
+                json.dump({"session_id": sid, "turn": 1, "max_requests": max_requests, "fingerprint_sha256": FP}, f)
+        rows, reqs = [], []
+        for n in range(1, admitted + 1):
+            rows.append({"event": "claude_sdk_admitted", "provider": "claude-sdk", "n": n, "model": request_model,
+                         "effort": effort, "system_sha256": system_sha, "tools_sha256": pipeline.sha256(
+                             json.dumps([{"name": t} for t in tool_names], sort_keys=True, separators=(",", ":"))),
+                         "tool_names": list(tool_names), "messages": messages})
+            if evidence == "complete":
+                rows.append({"event": "request", "provider": "claude-sdk", "n": n, "disposition": disposition,
+                             "http_status": 200 if disposition == "completed" else 529,
+                             "billing_verdict": {"verdict": verdict}, "response_model": response_model,
+                             "response_model_check": "verified", "usage_status": "reported",
+                             "usage": {"input_tokens": 10, "output_tokens": 5}, "seconds": 1.5})
+            reqs.append({"n": n})
+        rows += [{"event": "refused", "reason": r} for r in refused]
+        if "proxy" not in drop:
+            with open(files["proxy_log"], "w") as f:
+                f.writelines(json.dumps(r) + "\n" for r in rows)
+        sdk = {"evidence": evidence, "admitted": admitted, "refused": list(refused), "requests": reqs}
+        status = {"state": state, "kind": kind, "last_turn": {
+            "turn": turn, "outcome": outcome, "exit_code": 0, "stop_reason": stop, "model_requested": model,
+            "egress": {"claude_sdk": sdk}, "container": {"removed": removed}, "files": files}}
+        with open(os.path.join(root, f"status-{sid}.json"), "w") as f:
+            json.dump(status, f)
+        system = {"role": "system", "content": "", "sections": {"preamble": prompt, "cwd": "<cwd>\n/scratch\n</cwd>"}
+                  if sections is None else sections}
+        events = [{"type": "session", "id": sid}]
+        events += [] if "system" in drop else [{"type": "message_end", "message": system}]
         events += [{"type": "message_end", "message": {"role": "user", "content": [{"type": "text", "text": task}]}}] * users
         events += [{"type": "tool_execution_start", "toolName": "read"}] * tool_execs
         if assistant:
             events.append({"type": "message_end", "message": {
-                "role": "assistant", "provider": provider, "model": assistant_model, "thinkingLevel": "high", "stopReason": "stop",
-                "content": [{"type": "thinking", "thinking": "private"}, {"type": "text", "text": output}],
-                "usage": {"input": 10, "output": 5}, "durationMs": 100}})
-        with open(os.path.join(d, "events.jsonl"), "w") as f:
-            for e in events:
-                f.write(json.dumps(e) + "\n")
-        return d
-
-    def file(self, text):
-        self.n += 1
-        p = os.path.join(self.base, f"out{self.n}.txt")
-        with open(p, "w") as f:
-            f.write(text)
-        return p
+                "role": "assistant", "provider": provider, "model": assistant_model, "thinkingLevel": "high",
+                "stopReason": stop, "content": [{"type": "thinking", "thinking": "private"}, {"type": "text", "text": output}]}})
+        if "events" not in drop:
+            with open(files["events"], "w") as f:
+                f.writelines(json.dumps(e) + "\n" for e in events)
+        return root, sid
 
 
 def extraction(ambiguous=False, span="The worker must delete its file."):
@@ -93,6 +128,8 @@ class Base(unittest.TestCase):
         os.makedirs(pipeline.TASKS)
         self.patch = mock.patch.object(pipeline, "expectations", pinned_expectations)
         self.patch.start()
+        self.host = mock.patch.object(pipeline, "host_status", fake_host_status)
+        self.host.start()
         plan_meta = {"kind": "plan", "order": ["DOC-1"], "parents": ["DOC-1"], "derived": [], "documents": DOCS, "id_map": {"NC-A": "DOC-1"}}
         review_meta = {"kind": "review", "order": ["DOC-1", "DOC-2"], "parents": ["DOC-1"], "derived": ["DOC-2"],
                        "documents": REVIEW_DOCS, "id_map": {"NC-B-CONTRACT": "DOC-1", "NC-B-REVIEW": "DOC-2"}}
@@ -112,43 +149,65 @@ class Base(unittest.TestCase):
 
     def tearDown(self):
         self.patch.stop()
+        self.host.stop()
         self.tmp.cleanup()
 
     def attempt(self, run_id, output, **kw):
         row = pipeline.run_row(run_id)
-        return pipeline.record_attempt(run_id, self.fx.file(output), self.fx.run_dir(self.tasks[row["task_id"]], output, **kw))
+        return pipeline.record_attempt(run_id, *self.fx.launch(self.tasks[row["task_id"]], output, **kw))
 
 
 class Receipts(Base):
     def rc(self, output="ok", task="Plan task M1", calibration=False, **kw):
-        return pipeline.extract_receipt(self.fx.run_dir(task, output, **kw), kw.get("agent", "p7-arm"), task, output, calibration)
+        rc, text = pipeline.extract_receipt(*self.fx.launch(task, output, **kw), kw.get("agent", "p7-arm"), task, calibration)
+        return rc
 
     def test_clean_receipt(self):
-        rc = self.rc()
+        rc, text = pipeline.extract_receipt(*self.fx.launch("Plan task M1", "the answer"), "p7-arm", "Plan task M1")
         self.assertEqual((rc["violations"], rc["provider_failure"], rc["unestablished"]), ([], [], []))
-        self.assertEqual(rc["run_id"], "run-1")
+        self.assertEqual((rc["run_id"], text, rc["system_sha256"], rc["fingerprint_sha256"]), ("sid-1", "the answer", SYSTEM_SHA, FP))
+        self.assertEqual(rc["usage"], [{"usage": {"input_tokens": 10, "output_tokens": 5}, "durationMs": 1500}])
+        scorer = self.rc(agent="p7-scorer")
+        self.assertEqual(pipeline.receipt_status(scorer), None)
 
     def test_violations(self):
-        cases = {"declared but unused tool": dict(tools_added=[{"name": "read"}]), "tool execution": dict(tool_execs=1),
-                 "extra section": dict(sections=dict(SECTIONS, project_context="AGENTS.md")),
-                 "step model": dict(model="claude-sdk/claude-sonnet-5-5"), "provider": dict(provider="anthropic"),
-                 "actual model": dict(assistant_model="claude-sonnet-5-5"), "skills": dict(skills=["x"]),
+        cases = {"declared tool (host proxy)": dict(tool_names=["mcp__pi__read"]), "tool execution": dict(tool_execs=1),
+                 "extra launch option": dict(extra_argv=["--tools", "read"]),
+                 "appended prompt": dict(extra_argv=["--append-system-prompt", "x"]),
+                 "other agent prompt": dict(prompt="You are helpful."),
+                 "request cap": dict(max_requests=2), "two requests": dict(admitted=2),
+                 "launch model": dict(model="claude-sdk/claude-sonnet-5-5"), "effort": dict(effort="medium"),
+                 "system digest": dict(system_sha="b" * 64), "message count": dict(messages=4),
+                 "request model": dict(request_model="claude-haiku-5-5"), "served model": dict(response_model="claude-haiku-5-5"),
+                 "billing refused": dict(verdict="refused"), "lane refusal": dict(refused=["request cap"]),
+                 "second turn": dict(turn=2), "extra section": dict(sections={"preamble": "x", "cwd": "/s", "project_context": "y"}),
+                 "assistant provider": dict(provider="anthropic"), "assistant model": dict(assistant_model="claude-sonnet-5-5"),
                  "second user turn": dict(users=2)}
         for name, kw in cases.items():
-            self.assertTrue(self.rc(**kw)["violations"], name)
-            self.assertEqual(pipeline.receipt_status(self.rc(**kw)), "invalid_receipt", name)
+            rc = self.rc(**kw)
+            self.assertEqual(pipeline.receipt_status(rc), "invalid_receipt", (name, rc))
 
-    def test_task_and_output_custody(self):
-        d = self.fx.run_dir("Plan task M1", "the real answer")
-        self.assertIn("user message does not carry the planned task text",
-                      pipeline.extract_receipt(d, "p7-arm", "Another task", "the real answer")["violations"])
-        self.assertIn("output file does not match the final assistant text",
-                      pipeline.extract_receipt(d, "p7-arm", "Plan task M1", "a different answer")["violations"])
+    def test_smoke_both_agents(self):
+        arm = pipeline.record_smoke(*self.fx.launch(pipeline.SMOKE_TASK, "READY"))
+        scorer = pipeline.record_smoke(*self.fx.launch(pipeline.SMOKE_TASK, "READY", agent="p7-scorer"), "p7-scorer")
+        self.assertEqual((arm["status"], scorer["status"], scorer["receipt"]["agent"]), ("ok", "ok", "p7-scorer"))
+        wrong = pipeline.record_smoke(*self.fx.launch(pipeline.SMOKE_TASK, "READY", agent="p7-scorer"))
+        self.assertEqual(wrong["status"], "failed")  # scorer prompt launched, recorded as the arm
+        self.assertTrue(os.path.exists(os.path.join(pipeline.RUNS, "smoke", "3.json")))
+        with self.assertRaises(pipeline.PipelineError):
+            pipeline.record_smoke(*self.fx.launch(pipeline.SMOKE_TASK, "READY", native_id="sid-1"))
+
+    def test_task_custody(self):
+        rc, _ = pipeline.extract_receipt(*self.fx.launch("Plan task M1", "answer"), "p7-arm", "Another task")
+        self.assertIn("user message does not carry the planned task text", rc["violations"])
 
     def test_missing_evidence_is_unestablished_not_zero(self):
-        for drop in (("toolsAdded",), ("system",), ("context",), ("skills",)):
-            rc = self.rc(drop=drop)
-            self.assertEqual(pipeline.receipt_status(rc), "receipt_unestablished", drop)
+        cases = {"spec": dict(drop=("spec",)), "proxy log": dict(drop=("proxy",)), "events": dict(drop=("events",)),
+                 "system message": dict(drop=("system",)), "unsettled admission": dict(evidence="unresolved"),
+                 "billing verdict": dict(verdict="not_established"), "still running": dict(state="running"),
+                 "container": dict(removed=False), "outcome": dict(outcome="not_established")}
+        for name, kw in cases.items():
+            self.assertEqual(pipeline.receipt_status(self.rc(**kw)), "receipt_unestablished", name)
 
     def test_unpinned_expectations_block_counted_but_not_calibration(self):
         self.patch.stop()
@@ -159,7 +218,8 @@ class Receipts(Base):
             self.patch.start()
 
     def test_provider_failure_is_separate(self):
-        for kw in (dict(state="failed", exit_code=1), dict(assistant=False, state="failed", exit_code=1)):
+        for kw in (dict(outcome="failed", stop="error"), dict(disposition="upstream_error", outcome="failed", assistant=False),
+                   dict(admitted=0, outcome="failed", assistant=False), dict(output="")):
             self.assertEqual(pipeline.receipt_status(self.rc(**kw)), "provider_failure", kw)
 
 
@@ -186,17 +246,17 @@ class Attempts(Base):
         self.assertEqual(self.attempt("NC-B.M1.r2", "## FLAGS\nDOC-2: none")["status"], "valid")
 
     def test_provider_failure_allows_one_replacement_then_stops(self):
-        a = self.attempt("NC-A.M1.r1", "x", state="failed", exit_code=1)
+        a = self.attempt("NC-A.M1.r1", "x", outcome="failed", stop="error")
         self.assertEqual(a["status"], "provider_failure")
         self.assertEqual(pipeline.stop_reasons(), [])
-        b = self.attempt("NC-A.M1.r1", "y", state="failed", exit_code=1)
+        b = self.attempt("NC-A.M1.r1", "y", disposition="upstream_error", outcome="failed", stop="error")
         self.assertTrue(b["replacement"])
         self.assertTrue(pipeline.stop_reasons())
         with self.assertRaises(pipeline.PipelineError):
             self.attempt("NC-A.M1.r2", "FLAGS: none")
 
     def test_invalid_receipt_stops_everything(self):
-        a = self.attempt("NC-A.M1.r1", "FLAGS: none", tools_added=[{"name": "read"}])
+        a = self.attempt("NC-A.M1.r1", "FLAGS: none", tool_names=["mcp__pi__read"])
         self.assertEqual(a["status"], "invalid_receipt")
         with self.assertRaises(pipeline.PipelineError):
             self.attempt("NC-A.M1.r2", "FLAGS: none")
@@ -230,8 +290,7 @@ class FallbackAndCompare(Base):
         with self.assertRaises(pipeline.PipelineError):
             pipeline.compare("NC-A.M3.r1")  # incomplete batch
         wrong = json.dumps({"entry": "e1", "property": "verifier", "status": "binding", "value": ["any"], "reason": "x"})
-        rd = self.fx.run_dir(tasks[0]["body"], wrong)
-        rec = pipeline.record_fallback("NC-A.M3.r1", 0, self.fx.file(wrong), rd)
+        rec = pipeline.record_fallback("NC-A.M3.r1", 0, *self.fx.launch(tasks[0]["body"], wrong))
         self.assertEqual((rec["status"], rec["error"]), ("invalid_response", "response names a different target"))
         rep = pipeline.compare("NC-A.M3.r1")
         self.assertEqual(rep["fallback_log"][0]["outcome"], "invalid_response")
@@ -241,7 +300,7 @@ class FallbackAndCompare(Base):
         self.attempt("NC-A.M3.r1", extraction(ambiguous=True))
         tasks = pipeline.fallback_tasks("NC-A.M3.r1")
         ok = json.dumps({"entry": "e1", "property": "outcome_owner", "status": "binding", "value": ["acting_component"], "reason": "named"})
-        pipeline.record_fallback("NC-A.M3.r1", 0, self.fx.file(ok), self.fx.run_dir(tasks[0]["body"], ok))
+        pipeline.record_fallback("NC-A.M3.r1", 0, *self.fx.launch(tasks[0]["body"], ok))
         rep = pipeline.compare("NC-A.M3.r1")
         self.assertIn("owner_unresolved", {f["flag"] for f in rep["pre"]["plan_flags"]})
         self.assertNotIn("owner_unresolved", {f["flag"] for f in rep["post"]["plan_flags"]})
@@ -255,7 +314,7 @@ class Scoring(Base):
 
     def score(self, entry, text):
         task = pipeline.read_text(os.path.join(pipeline._batch_dir(int(entry["score_id"][1])), entry["score_id"], "task.md"))
-        return pipeline.record_score(entry["score_id"], self.fx.file(text), self.fx.run_dir(task, text, agent="p7-scorer"))
+        return pipeline.record_score(entry["score_id"], *self.fx.launch(task, text, agent="p7-scorer"))
 
     def test_mixed_batch_through_item_outcomes(self):
         self.attempt("NC-A.M1.r1", "The worker owns deletion.\nFLAGS: none")

@@ -1,0 +1,64 @@
+{
+  "output_sha256": "c2e3ac47f4a325469c1a2d5f117e463ec943c721986d5d9f09ac4540b7d80526",
+  "receipt": {
+    "agent": "p7-arm",
+    "effective_extensions": [
+      "sha256:8e4f4b6a383f79a5",
+      "sha256:8610c34d92651b26"
+    ],
+    "events_sha256": "eb03961a18e95d8849500df79fbeed21277dd40fb35887a0d585ec57ae1f6f68",
+    "exit_code": 0,
+    "final_text_sha256": "176d5f6eb94db4e7321e9790c178c414fa96b48c7d27c308e074f5dea6d07e3d",
+    "launch_contract_digest": "d810122ff51b79288c11f5854f0207e41f31ba72fa7da11f3db28610095e7d3f",
+    "observations": {
+      "system_content_unpinned": true
+    },
+    "provider_failure": [],
+    "run_dir": "/tmp/pi-subagents-uid-1000/async-subagent-runs/ef515886-75f1-4d3d-b4f4-50749478657f",
+    "run_id": "ef515886-75f1-4d3d-b4f4-50749478657f",
+    "session_file": "/home/bline/.pi/agent/sessions/--home-bline-code-work-engine--/2026-11-23T05-47-09-629Z_01a206f1-a5b7-729e-b3e2-b53250edde5a/ef515886-75f1-4d3d-b4f4-50749478657f/run-0/session.jsonl",
+    "session_id": "/home/bline/.pi/agent/sessions/--home-bline-code-work-engine--/2026-11-23T05-47-09-629Z_01a206f1-a5b7-729e-b3e2-b53250edde5a.jsonl",
+    "state": "complete",
+    "status_sha256": "fa1d65ee9bad3cd6e5ec91d07ae9997e4d5fa417a5b7de1b52d0f75b458bd740",
+    "step_model": "claude-sdk/claude-opus-5-5",
+    "step_thinking": "high",
+    "system_content_sha256": "055539df4a0b804c58caf46c0cd2941af10d64c1395ddd8e50b5f55d945841e6",
+    "tokens": {
+      "input": 2,
+      "output": 270,
+      "total": 272,
+      "window": 2,
+      "windowPeak": 2
+    },
+    "unestablished": [
+      "system message 0 has no toolsAdded record"
+    ],
+    "usage": [
+      {
+        "durationMs": 3251,
+        "usage": {
+          "cacheRead": 0,
+          "cacheWrite": 1912,
+          "cacheWrite1h": 1912,
+          "cost": {
+            "cacheRead": 0,
+            "cacheWrite": 0.015296,
+            "input": 8e-06,
+            "output": 0.0054,
+            "total": 0.020704,
+            "totalFromProvider": false
+          },
+          "input": 2,
+          "output": 270,
+          "totalTokens": 2184
+        }
+      }
+    ],
+    "user_wrapper_sha256": "27d06f214758faa90626a14f0fec57ea768d71b01c3129ff6e33eea8cdd860ab",
+    "violations": [
+      "output file does not match the final assistant text"
+    ]
+  },
+  "stage": "smoke",
+  "status": "failed"
+}

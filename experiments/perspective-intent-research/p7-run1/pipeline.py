@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """P7 run 1 offline pipeline, revision 3. No model calls; the executor (RUNBOOK.md)
-launches agents and feeds their outputs and native run directories to these commands.
+launches agents through role_host's Claude subscription container lane; each record command
+reads that launch's host records (STATE is the role_host --state root, SID the Pi session id) and
+takes the output from the run's final assistant text.
 
 Commands (run from the repository root):
   gate                                           exit 0 if no stop condition is recorded, else 22
-  receipt AGENT RUN_DIR [TASK_FILE OUTPUT_FILE]  inspect one launch receipt (calibration mode; records nothing)
-  record-smoke OUTPUT_FILE RUN_DIR               record the smoke launch (not counted)
-  record-calibration TASK_ID OUTPUT_FILE RUN_DIR record one calibration launch (disclosed, not counted)
-  record-attempt RUN_ID OUTPUT_FILE RUN_DIR      record an arm attempt with its receipt
+  receipt AGENT STATE SID [TASK_FILE]            inspect one launch receipt (calibration mode; records nothing)
+  record-smoke STATE SID [AGENT]                 record a smoke launch of p7-arm (default) or p7-scorer (not counted)
+  record-calibration TASK_ID STATE SID           record one calibration launch (disclosed, not counted)
+  record-attempt RUN_ID STATE SID                record an arm attempt with its receipt
   adjudicate-leakage RECORD coincidental|exposure REASON
                                                  RECORD is a record file under runs/, e.g. attempts/T1.M1.r1/1/attempt.json
   fallback-tasks RUN_ID                          write the fixed M3 fallback tasks for the final attempt
-  record-fallback RUN_ID INDEX OUTPUT_FILE RUN_DIR
+  record-fallback RUN_ID INDEX STATE SID
   compare RUN_ID                                 comparator pre (and post for M3) on the final valid typed attempt
   score-tasks [--new-batch]                      write a versioned batch of scorer tasks
-  record-score SCORE_ID OUTPUT_FILE RUN_DIR      record and validate a scorer reply
+  record-score SCORE_ID STATE SID                record and validate a scorer reply
   human-sample                                   write the human-check list for the latest batch
   declare-stop REASON                            record a stop (for example a pipeline defect)
   report                                         join every record into results
@@ -110,6 +112,29 @@ def qn(text):
 
 # ---------------------------------------------------------------- receipts
 
+REPO = os.path.normpath(os.path.join(HERE, "..", "..", ".."))
+ROLE_HOST = os.path.join(REPO, "skills", "manual-orchestration", "scripts", "role_host.py")
+# The tool list Claude Code sends when Pi declares no tools, as the host proxy digests it.
+EMPTY_TOOLS_SHA256 = sha256(json.dumps([], sort_keys=True, separators=(",", ":")))
+# role_host's fixed Pi argv prefix for a claude-sdk container turn (12 tokens); launch options follow it.
+ARGV_PREFIX = 12
+
+
+def host_status(state, session_id):
+    """`role_host.py status` for one session: a local, read-only view of the host records."""
+    import subprocess
+    r = subprocess.run([sys.executable, "-I", ROLE_HOST, "--state", state, "status", "pi", session_id],
+                       capture_output=True, text=True, timeout=120)
+    if r.returncode != 0:
+        raise ValueError(f"role_host status exited {r.returncode}: {(r.stdout + r.stderr).strip()[-300:]}")
+    return r.stdout
+
+
+def agent_prompt(agent):
+    """The exact system prompt text an agent is launched with (`$(cat file)` drops trailing newlines)."""
+    return read_text(os.path.join(HERE, expectations()["agents"][agent]["system_prompt_file"])).rstrip("\n")
+
+
 def _content_text(content):
     if isinstance(content, str):
         return content
@@ -118,128 +143,249 @@ def _content_text(content):
     return ""
 
 
-def extract_receipt(run_dir, agent, task=None, output_text=None, calibration=False):
-    """Read the launch receipt from a native async run directory, outside the model.
-
-    Findings are sorted into violations (the launch contract was proven broken),
-    provider_failure (the provider did not complete) and unestablished (the
-    evidence needed to establish the contract is missing). Missing is never zero."""
-    exp = expectations()
-    ag = exp["agents"][agent]
-    rc = {"agent": agent, "run_dir": os.path.abspath(run_dir), "violations": [], "provider_failure": [],
-          "unestablished": [], "observations": {}}
-    v, pf, un = rc["violations"], rc["provider_failure"], rc["unestablished"]
-    try:
-        status_raw = read_bytes(os.path.join(run_dir, "status.json"))
-        events_raw = read_bytes(os.path.join(run_dir, "events.jsonl"))
-        status = json.loads(status_raw)
-    except (OSError, ValueError) as exc:
-        un.append(f"run directory unreadable: {type(exc).__name__}")
-        return rc
-    rc["status_sha256"], rc["events_sha256"] = sha256(status_raw), sha256(events_raw)
-    steps = status.get("steps") or []
-    step = steps[0] if steps else {}
-    rc.update(run_id=status.get("runId"), session_id=status.get("sessionId"), session_file=step.get("sessionFile"),
-              state=status.get("state"), exit_code=step.get("exitCode"), step_model=step.get("model"),
-              step_thinking=step.get("thinking"), launch_contract_digest=status.get("launchContractDigest"),
-              tokens=step.get("tokens"), effective_extensions=(step.get("launchResolvedExtensions") or {}).get("effective"))
-    systems, users, assistants, tool_execs, malformed = [], [], [], 0, 0
-    for line in events_raw.decode(errors="replace").splitlines():
+def _jsonl(raw):
+    rows, malformed = [], 0
+    for line in raw.decode(errors="replace").splitlines():
         if not line.strip():
             continue
         try:
-            e = json.loads(line)
+            rows.append(json.loads(line))
         except ValueError:
             malformed += 1
+    return rows, malformed
+
+
+def _launch_options(pi_argv, session_id):
+    """Split role_host's Pi argv into (options, error). Options are (flag, value-or-None) pairs."""
+    if (pi_argv[:4] != ["--mode", "json", "--session-id", session_id] or pi_argv[4] != "--session-dir"
+            or pi_argv[6:9] != ["--no-extensions", "--no-approve", "-e"] or pi_argv[10] != "-e"):
+        return None, "launch argv layout not recognized"
+    rest, opts = list(pi_argv[ARGV_PREFIX:]), []
+    while rest:
+        flag = rest.pop(0)
+        if flag in ("--model", "--thinking", "--system-prompt", "--name", "--tools", "--append-system-prompt",
+                    "--skill", "--exclude-tools", "--extension"):
+            if not rest:
+                return None, f"{flag} without a value"
+            opts.append((flag, rest.pop(0)))
+        else:
+            opts.append((flag, None))
+    return opts, None
+
+
+def extract_receipt(state, session_id, agent, task=None, calibration=False):
+    """Read one launch's receipt from the role_host records, outside the model.
+
+    Host-only evidence (role_host ledger and status, the turn spec with Pi's argv, the
+    turn intent, the egress proxy log) establishes the launch contract, tool
+    availability, the request count, the system prompt digest, effort, served model and
+    billing verdict. Pi's events file (written inside the networkless container by Pi;
+    the model has no tools) supplies the user turn and the final text.
+
+    Returns (receipt, final_text). Findings are violations (the contract was proven
+    broken), provider_failure (the provider did not complete) and unestablished (the
+    evidence needed is missing). Missing is never zero."""
+    exp = expectations()
+    lane, ag = exp["lane"], exp["agents"][agent]
+    prompt = agent_prompt(agent)
+    rc = {"agent": agent, "host_state": os.path.abspath(os.path.expanduser(state)), "run_id": session_id,
+          "session_id": session_id, "violations": [], "provider_failure": [], "unestablished": [],
+          "observations": {}}
+    v, pf, un = rc["violations"], rc["provider_failure"], rc["unestablished"]
+    try:
+        status_raw = host_status(rc["host_state"], session_id)
+        st = json.loads(status_raw)
+    except (OSError, ValueError) as exc:
+        un.append(f"host status unreadable: {exc}")
+        return rc, ""
+    rc["status_sha256"] = sha256(status_raw)
+    rc["state"] = st.get("state")
+    if st.get("state") not in ("idle", "stopped"):
+        un.append(f"session state {st.get('state')!r}")
+        return rc, ""
+    if st.get("kind") != "pi_container_turn":
+        v.append(f"session kind {st.get('kind')!r}")
+    if st.get("unrecorded_turns"):
+        v.append(f"{len(st['unrecorded_turns'])} unrecorded turn intent(s)")
+    if st.get("leftovers"):
+        un.append("turn leftovers not collected")
+    lt = st.get("last_turn") or {}
+    files = lt.get("files") or {}
+    if lt.get("turn") != 1:
+        v.append(f"last turn is {lt.get('turn')!r}, not the single fresh turn 1")
+    if lt.get("model_requested") != lane["model"]:
+        v.append(f"requested model {lt.get('model_requested')!r}")
+    rc.update(outcome=lt.get("outcome"), stop_reason=lt.get("stop_reason"), exit_code=lt.get("exit_code"))
+
+    # host-only: the turn spec (Pi's exact argv) and the durable turn intent
+    try:
+        spec_raw = read_bytes(files["spec"])
+        spec = json.loads(spec_raw)
+        rc["spec_sha256"] = sha256(spec_raw)
+        intent = load_json(os.path.join(os.path.dirname(files["spec"]), "turn-1.intent.json"))
+    except (KeyError, OSError, ValueError) as exc:
+        un.append(f"turn spec or intent unreadable: {type(exc).__name__}")
+        spec, intent = None, None
+    if spec is not None:
+        rc["cwd"] = spec.get("cwd")
+        rc["fingerprint_sha256"] = intent.get("fingerprint_sha256")
+        if (spec.get("session_id"), spec.get("turn"), intent.get("session_id")) != (session_id, 1, session_id):
+            v.append("turn spec or intent belongs to another session or turn")
+        if spec.get("provider") != lane["provider"] or spec.get("model_id") != lane["assistant_model"]:
+            v.append(f"spec route {spec.get('provider')}/{spec.get('model_id')}")
+        if spec.get("max_requests") != lane["max_requests"] or intent.get("max_requests") != lane["max_requests"]:
+            v.append(f"request cap {spec.get('max_requests')!r}")
+        if intent.get("fingerprint_sha256") != ((spec.get("environment") or {}).get("fingerprint") or {}).get("sha256"):
+            v.append("intent fingerprint differs from the spec environment")
+        opts, err = _launch_options(spec.get("pi_argv") or [], session_id)
+        if err:
+            un.append(err)
+        else:
+            got = sorted((f, x) for f, x in opts if f != "--name")
+            want = sorted([("--model", lane["model"]), ("--thinking", lane["thinking"]), ("--system-prompt", prompt)]
+                          + [(f, None) for f in lane["options"]])
+            if got != want:
+                v.append("launch options differ from the contract: "
+                         + ", ".join(sorted({f for f, _ in set(got) ^ set(want)})))
+
+    # host-only: the egress proxy log
+    sdk = (lt.get("egress") or {}).get("claude_sdk")
+    if not isinstance(sdk, dict):
+        un.append("no claude-sdk egress summary")
+        sdk = {}
+    try:
+        proxy_raw = read_bytes(files["proxy_log"])
+        rc["proxy_log_sha256"] = sha256(proxy_raw)
+        proxy, bad = _jsonl(proxy_raw)
+        if bad:
+            un.append(f"{bad} malformed proxy rows")
+    except (KeyError, OSError) as exc:
+        un.append(f"proxy log unreadable: {type(exc).__name__}")
+        proxy = None
+    admitted = [r for r in proxy or [] if r.get("event") == "claude_sdk_admitted"]
+    settled = [r for r in proxy or [] if r.get("event") == "request" and r.get("provider") == "claude-sdk"]
+    rc["requests"] = sdk.get("requests")
+    if sdk and proxy is not None:
+        if sdk.get("evidence") != "complete":
+            un.append(f"proxy evidence {sdk.get('evidence')!r}")
+        if sdk.get("refused"):
+            v.append(f"lane refused: {sdk['refused']}")
+        if sdk.get("admitted") != len(admitted):
+            un.append("proxy summary and log disagree")
+        if len(admitted) > 1:
+            v.append(f"{len(admitted)} requests admitted")
+        elif not admitted and not sdk.get("refused"):
+            pf.append("no request reached the provider")
+    for a in admitted:
+        if a.get("model") != lane["assistant_model"]:
+            v.append(f"request {a.get('n')} model {a.get('model')!r}")
+        if a.get("effort") != lane["effort"]:
+            v.append(f"request {a.get('n')} effort {a.get('effort')!r}")
+        if a.get("tool_names") != [] or a.get("tools_sha256") != EMPTY_TOOLS_SHA256:
+            v.append(f"request {a.get('n')} declares tools {a.get('tool_names')!r}")
+        rc["system_sha256"] = a.get("system_sha256")
+        if ag.get("system_sha256") is None:
+            if calibration:
+                rc["observations"]["system_sha256_unpinned"] = True
+            else:
+                un.append("expected system digest not pinned")
+        elif a.get("system_sha256") != ag["system_sha256"]:
+            v.append("request system prompt differs from the pinned digest")
+        rc["request_messages"] = a.get("messages")
+        if exp.get("request_messages") is None:
+            if not calibration:
+                un.append("expected request message count not pinned")
+        elif a.get("messages") != exp["request_messages"]:
+            v.append(f"request {a.get('n')} carries {a.get('messages')!r} messages")
+    for r in settled:
+        verdict = (r.get("billing_verdict") or {}).get("verdict")
+        if r.get("disposition") != "completed":
+            pf.append(f"request {r.get('n')} {r.get('disposition')!r} (HTTP {r.get('http_status')})")
             continue
+        if r.get("response_model") != lane["assistant_model"] or r.get("response_model_check") != "verified":
+            v.append(f"request {r.get('n')} served {r.get('response_model')!r}")
+        if verdict == "refused":
+            v.append(f"request {r.get('n')} billing verdict refused")
+        elif verdict != "allowed":
+            un.append(f"request {r.get('n')} billing verdict {verdict!r}")
+        if r.get("usage_status") != "reported":
+            un.append(f"request {r.get('n')} usage {r.get('usage_status')!r}")
+    rc["usage"] = [{"usage": r.get("usage"), "durationMs": round(r["seconds"] * 1000) if isinstance(r.get("seconds"), (int, float)) else None}
+                   for r in settled]
+    if not (lt.get("container") or {}).get("removed"):
+        un.append("container removal not recorded")
+
+    # container-written by Pi: the events file (user turn, system sections, final text)
+    try:
+        events_raw = read_bytes(files["events"])
+    except (KeyError, OSError) as exc:
+        un.append(f"events unreadable: {type(exc).__name__}")
+        events_raw = None
+    if events_raw is None:
+        return rc, ""  # nothing about the conversation can be read; absent is not empty
+    rc["events_sha256"] = sha256(events_raw)
+    events, bad = _jsonl(events_raw)
+    if bad:
+        un.append(f"{bad} malformed event lines")
+    header = events[0] if events else {}
+    if header.get("type") != "session" or header.get("id") != session_id:
+        un.append("events do not begin with this session's header")
+    msgs = {"system": [], "user": [], "assistant": []}
+    tool_execs = 0
+    for e in events:
         if e.get("type") == "tool_execution_start":
             tool_execs += 1
         m = e.get("message") or {}
-        if e.get("type") == "message_end":
-            {"system": systems, "user": users, "assistant": assistants}.get(m.get("role"), []).append(m)
-    # identity and launch facts
-    if not rc["run_id"]:
-        un.append("no native run id")
-    if len(steps) != 1:
-        (v if len(steps) > 1 else un).append(f"{len(steps)} steps")
-    if step.get("agent") != agent:
-        v.append(f"agent {step.get('agent')!r} != {agent!r}")
-    if step.get("model") != ag["step_model"] or step.get("thinking") != ag["thinking"]:
-        v.append(f"model/thinking {step.get('model')}/{step.get('thinking')}")
-    for key, want in (("context", "fresh"), ("skills", [])):
-        if key not in step:
-            un.append(f"step {key} not recorded")
-        elif step[key] != want:
-            v.append(f"step {key} {step[key]!r}")
-    if malformed:
-        un.append(f"{malformed} malformed event lines")
-    # availability: tool declarations at every system message
-    if not systems:
+        if e.get("type") == "message_end" and m.get("role") in msgs:
+            msgs[m["role"]].append(m)
+    if tool_execs:
+        v.append(f"{tool_execs} tool executions")
+    if not msgs["system"]:
         un.append("no system message recorded")
-    for i, s in enumerate(systems):
-        if "toolsAdded" not in s:
-            un.append(f"system message {i} has no toolsAdded record")
-        elif s["toolsAdded"]:
-            v.append(f"system message {i} declares tools")
-        if s.get("toolsRemoved"):
-            rc["observations"].setdefault("toolsRemoved", []).append(len(s["toolsRemoved"]))
+    for i, s in enumerate(msgs["system"]):
         sections = s.get("sections")
         if not isinstance(sections, dict) or not sections:
             un.append(f"system message {i} has no sections")
-        elif set(sections) != set(ag["system_sections"]):
+        elif set(sections) != {"preamble", "cwd"}:
             v.append(f"system message {i} sections {sorted(sections)}")
-    if systems:
-        content_sha = sha256(json.dumps([s.get("content") for s in systems], ensure_ascii=False))
-        rc["system_content_sha256"] = content_sha
-        pinned = ag.get("system_content_sha256")
-        if pinned is None:
-            if calibration:
-                rc["observations"]["system_content_unpinned"] = True
-            else:
-                un.append("expected system content not pinned")
-        elif content_sha != pinned:
-            v.append("system content differs from the pinned expectation")
-    if tool_execs:
-        v.append(f"{tool_execs} tool executions")
-    tc = step.get("toolCount", status.get("toolCount"))
-    if isinstance(tc, int) and tc:
-        v.append(f"toolCount {tc}")
-    # task custody: one user turn carrying the planned task
-    if len(users) != 1:
-        (v if len(users) > 1 else un).append(f"{len(users)} user messages")
-    if users and task is not None:
-        utext = _content_text(users[0].get("content"))
-        if not task or task not in utext:
+        elif sections["preamble"] != prompt:
+            v.append(f"system message {i} preamble is not the {agent} prompt")
+    if len(msgs["user"]) != 1:
+        (v if len(msgs["user"]) > 1 else un).append(f"{len(msgs['user'])} user messages")
+    if msgs["user"] and task is not None:
+        utext = _content_text(msgs["user"][0].get("content"))
+        if not task.strip() or task.strip() not in utext:
             v.append("user message does not carry the planned task text")
         else:
-            wrapper = sha256(utext.replace(task, "{{TASK}}", 1))
+            wrapper = sha256(utext.strip().replace(task.strip(), "{{TASK}}", 1))
             rc["user_wrapper_sha256"] = wrapper
             pinned = exp.get("user_wrapper_sha256")
             if pinned is None and not calibration:
                 un.append("expected user wrapper not pinned")
             elif pinned is not None and wrapper != pinned:
                 v.append("user message wrapper differs from the pinned expectation")
-    # actual provider, model and effort on every assistant call
+    assistants = msgs["assistant"]
+    if len(assistants) > 1:
+        v.append(f"{len(assistants)} assistant messages")
     for i, m in enumerate(assistants):
-        if (m.get("provider"), m.get("model"), m.get("thinkingLevel")) != (ag["provider"], ag["assistant_model"], ag["thinking"]):
+        if (m.get("provider"), m.get("model"), m.get("thinkingLevel")) != (lane["provider"], lane["assistant_model"], lane["thinking"]):
             v.append(f"assistant call {i} ran {m.get('provider')}/{m.get('model')}/{m.get('thinkingLevel')}")
-    rc["usage"] = [{"usage": m.get("usage"), "durationMs": m.get("durationMs")} for m in assistants]
+
     # terminal result
     final = assistants[-1] if assistants else {}
-    if status.get("state") != "complete" or step.get("exitCode") not in (0,):
-        pf.append(f"state {status.get('state')!r}, exit {step.get('exitCode')!r}")
+    final_text = _content_text(final.get("content"))
+    rc["final_text_sha256"] = sha256(final_text)
+    if lt.get("outcome") == "not_established":
+        un.append("turn outcome not established")
+    elif lt.get("outcome") != "completed":
+        pf.append(f"turn outcome {lt.get('outcome')!r}, exit {lt.get('exit_code')!r}")
     if not assistants:
         pf.append("no assistant message")
-    elif final.get("stopReason") in ("error", "aborted") or final.get("errorMessage"):
+    elif final.get("stopReason") in ("error", "aborted", "length") or final.get("errorMessage"):
         pf.append(f"final stop {final.get('stopReason')!r}")
-    final_text = _content_text(final.get("content"))
-    rc["final_text_sha256"] = sha256(final_text.strip())
-    if output_text is not None and assistants:
-        if output_text.strip() != final_text.strip():
-            v.append("output file does not match the final assistant text")
-        elif not final_text.strip():
-            pf.append("empty final text")
-    return rc
+    elif not final_text.strip():
+        pf.append("empty final text")
+    return rc, final_text
 
 
 def receipt_status(rc):
@@ -429,9 +575,10 @@ def _status(rc, assessed, hits):
 
 # ---------------------------------------------------------------- smoke and calibration (not counted)
 
-def record_smoke(output_file, run_dir):
-    text = read_text(output_file)
-    rc = extract_receipt(run_dir, "p7-arm", SMOKE_TASK, text, calibration=True)
+def record_smoke(state, session_id, agent="p7-arm"):
+    if agent not in expectations()["agents"]:
+        raise PipelineError(f"unknown agent {agent}")
+    rc, text = extract_receipt(state, session_id, agent, SMOKE_TASK, calibration=True)
     _require_unique_run(rc)
     ok = receipt_status(rc) is None and text.strip() == "READY"
     rec = {"stage": "smoke", "receipt": rc, "output_sha256": sha256(text), "status": "ok" if ok else "failed"}
@@ -440,14 +587,13 @@ def record_smoke(output_file, run_dir):
     return rec
 
 
-def record_calibration(task_id, output_file, run_dir):
+def record_calibration(task_id, state, session_id):
     rows = [r for r in plan()["runs"] if r["task_id"] == task_id]
     if not rows:
         raise PipelineError(f"unknown task {task_id}")
     row = dict(rows[0], method="M2" if task_id.endswith(".M2") else rows[0]["method"])
-    raw = read_bytes(output_file)
-    text = raw.decode(errors="replace")
-    rc = extract_receipt(run_dir, "p7-arm", task_text(row), text, calibration=True)
+    rc, text = extract_receipt(state, session_id, "p7-arm", task_text(row), calibration=True)
+    raw = text.encode()
     _require_unique_run(rc)
     assessed, error, failures = assess_output(row, text)
     base = os.path.join(RUNS, "calibration", task_id)
@@ -463,14 +609,13 @@ def record_calibration(task_id, output_file, run_dir):
 
 # ---------------------------------------------------------------- arm attempts
 
-def record_attempt(run_id, output_file, run_dir):
+def record_attempt(run_id, state, session_id):
     require_no_stop()
     row = run_row(run_id)
     base = os.path.join(RUNS, "attempts", run_id)
     n, replacement = _next_in_series(_attempt_paths(base), run_id)
-    raw = read_bytes(output_file)
-    text = raw.decode(errors="replace")
-    rc = extract_receipt(run_dir, "p7-arm", task_text(row), text)
+    rc, text = extract_receipt(state, session_id, "p7-arm", task_text(row))
+    raw = text.encode()
     _require_unique_run(rc)
     assessed, error, failures = assess_output(row, text)
     hits = leakage_hits(text)
@@ -546,7 +691,7 @@ def _response_paths(d, index):
     return [os.path.join(d, f"response-{index}.{n}.json") for n in (1, 2)]
 
 
-def record_fallback(run_id, index, output_file, run_dir):
+def record_fallback(run_id, index, state, session_id):
     require_no_stop()
     a = _valid_final(run_id)
     d = _fallback_dir(run_id, a["attempt"])
@@ -560,9 +705,8 @@ def record_fallback(run_id, index, output_file, run_dir):
     task = read_text(os.path.join(d, f"task-{index}.md"))
     if sha256(task) != targets[index]["task_sha256"]:
         raise PipelineError("fallback task file changed")
-    raw = read_bytes(output_file)
-    text = raw.decode(errors="replace")
-    rc = extract_receipt(run_dir, "p7-arm", task, text)
+    rc, text = extract_receipt(state, session_id, "p7-arm", task)
+    raw = text.encode()
     _require_unique_run(rc)
     rec = {"run_id": run_id, "attempt": a["attempt"], "index": index, "try": n, "replacement": replacement,
            "target": targets[index]["target"], "output_sha256": sha256(raw), "receipt": rc,
@@ -809,7 +953,7 @@ def validate_score_reply(reply, entry, material, documents):
     return errors, qfail
 
 
-def record_score(score_id, output_file, run_dir):
+def record_score(score_id, state, session_id):
     require_no_stop()
     k, entry = _key_entry(score_id)
     d = os.path.join(_batch_dir(k), score_id)
@@ -819,9 +963,8 @@ def record_score(score_id, output_file, run_dir):
     if sha256(task) != entry["task_sha256"]:
         raise PipelineError("scorer task changed")
     material = load_json(os.path.join(d, "material.json"))
-    raw = read_bytes(output_file)
-    text = raw.decode(errors="replace")
-    rc = extract_receipt(run_dir, "p7-scorer", task, text)
+    rc, text = extract_receipt(state, session_id, "p7-scorer", task)
+    raw = text.encode()
     _require_unique_run(rc)
     rec = {"score_id": score_id, "try": n, "replacement": replacement, "output_sha256": sha256(raw), "receipt": rc,
            "errors": [], "quote_failures": []}
@@ -1001,6 +1144,10 @@ def report():
 
 # ---------------------------------------------------------------- cli
 
+def _usage_error():
+    raise PipelineError("usage: see the command list")
+
+
 def main(argv):
     cmd = argv[1] if len(argv) > 1 else ""
     args = argv[2:]
@@ -1009,14 +1156,13 @@ def main(argv):
             reasons = stop_reasons()
             print(json.dumps({"stopped": bool(reasons), "reasons": reasons}, indent=2))
             return STOP_EXIT if reasons else 0
-        if cmd == "receipt" and len(args) in (2, 4):
-            task = read_text(args[2]) if len(args) == 4 else None
-            out = read_text(args[3]) if len(args) == 4 else None
-            res = extract_receipt(args[1], args[0], task, out, calibration=True)
+        if cmd == "receipt" and len(args) in (3, 4):
+            task = read_text(args[3]) if len(args) == 4 else None
+            res, _ = extract_receipt(args[1], args[2], args[0], task, calibration=True)
             print(json.dumps(res, indent=2)[:6000])
             return 0 if receipt_status(res) is None else STOP_EXIT
         handlers = {
-            "record-smoke": (2, lambda: record_smoke(*args)),
+            "record-smoke": (None, lambda: record_smoke(*args) if len(args) in (2, 3) else _usage_error()),
             "record-calibration": (3, lambda: record_calibration(*args)),
             "record-attempt": (3, lambda: record_attempt(*args)),
             "adjudicate-leakage": (3, lambda: adjudicate_leakage(*args)),

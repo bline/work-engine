@@ -1,12 +1,20 @@
 {
-  "version": 1,
+  "version": 2,
   "pinned": false,
-  "note": "Expected launch receipt facts. The two digests are null until the disclosed calibration batch (RUNBOOK section 4) observes them; the operator pins them here and re-freezes before any counted run. While unpinned, counted records are receipt_unestablished.",
-  "agents": {
-    "p7-arm": {"step_model": "claude-sdk/claude-opus-5-5", "thinking": "high", "provider": "claude-sdk",
-               "assistant_model": "claude-opus-5-5", "system_sections": ["cwd", "preamble"], "system_content_sha256": null},
-    "p7-scorer": {"step_model": "claude-sdk/claude-opus-5-5", "thinking": "high", "provider": "claude-sdk",
-                  "assistant_model": "claude-opus-5-5", "system_sections": ["cwd", "preamble"], "system_content_sha256": null}
+  "note": "Expected launch receipt facts for role_host's Claude subscription container lane (RUNBOOK section 2). The system digests, the request message count and the user wrapper digest are null until the disclosed calibration batch (RUNBOOK section 4) observes them; the operator pins them here and re-freezes before any counted run. While unpinned, counted records are receipt_unestablished.",
+  "lane": {
+    "provider": "claude-sdk",
+    "model": "claude-sdk/claude-opus-5-5",
+    "assistant_model": "claude-opus-5-5",
+    "thinking": "high",
+    "effort": "high",
+    "max_requests": 1,
+    "options": ["--no-tools", "--no-skills", "--no-context-files"]
   },
+  "agents": {
+    "p7-arm": {"system_prompt_file": "agents/p7-arm.md", "system_sha256": null},
+    "p7-scorer": {"system_prompt_file": "agents/p7-scorer.md", "system_sha256": null}
+  },
+  "request_messages": null,
   "user_wrapper_sha256": null
 }

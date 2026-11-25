@@ -1,6 +1,6 @@
 # P7 run 1: pre-registration protocol (revision 3, draft)
 
-**Status:** Draft, not frozen, not authorized to run. Revision 2 answered the review of revision 1 (§12). Revision 3 answers the re-review of revision 2 (§13); both reviews are in [`reviews/p7-run1-protocol-astra-20261124/`](../../../reviews/p7-run1-protocol-astra-20261124/README.md). Two parts depend on data, and wait for a disclosed, uncounted calibration batch: the pinned receipt digests and the quote policy. Freezing needs that calibration and a passing review (§10). Running needs a separate operator execution go-ahead, which is distinct from the freeze.
+**Status:** Draft, not frozen, not authorized to run. Revision 2 answered the review of revision 1 (§12). Revision 3 answers the re-review of revision 2 (§13), and moves launches to the Claude subscription container lane after the first smoke (§14); both reviews are in [`reviews/p7-run1-protocol-astra-20261124/`](../../../reviews/p7-run1-protocol-astra-20261124/README.md). Two parts depend on data, and wait for a disclosed, uncounted calibration batch: the pinned receipt digests and the quote policy. Freezing needs that calibration and a passing review (§10). Running needs a separate operator execution go-ahead, which is distinct from the freeze.
 **Date:** 2026-11-24
 **Owning design:** [pilot P7 and Stage 1c](../../../design/ideas/pending/pilots/perspective-intent-pilot.md). Execution is specified in [RUNBOOK.md](RUNBOOK.md).
 
@@ -8,7 +8,7 @@
 
 | Decision | Value |
 |---|---|
-| Arm, fallback and scorer model | `claude-sdk/claude-opus-5-5`, effort `high`. Bills the Claude subscription; Pi subagents do not fall back to another model |
+| Arm, fallback and scorer model | `claude-sdk/claude-opus-5-5`, effort `high`. Bills the Claude subscription through role_host's container lane, which has no fallback model and refuses rather than use extra usage (2026-11-25, §14) |
 | Second arm model (`openai/gpt-6.2-astra`) | Deferred |
 | Repeats | 3 fresh runs per arm, method and input |
 | Run count | 66 arm runs |
@@ -216,20 +216,22 @@ Analysis separates three causes of a typed miss:
 
 Execution follows [RUNBOOK.md](RUNBOOK.md). In summary:
 
-- **Isolation:** agents `p7-arm` and `p7-scorer` have:
-  - an empty `tools` list and a replaced system prompt;
-  - no project or global context and no skills;
-  - only the Claude provider extension;
-  - fresh context.
-
-  They're installed at user scope, launched with `agentScope: "user"`, from an empty scratch directory.
-- **Receipts:** every launch is checked from outside the model, through the native run directory. Findings are sorted into violations, provider failures and missing evidence (never read as zero). The receipt verifies:
-  - **tool availability:** no tool declared at any system message, and no tool executions;
-  - **actual calls:** provider, model and effort on every assistant call;
-  - **context:** system sections and system content, against the digest pinned from calibration;
-  - **custody:** one user turn carrying the planned task text; the output file equal to the final assistant text; one native run id per record.
-- **Supervisor bridge:** the installed `subagent` tool has no per-launch bridge override, and no global configuration is edited. The bridge is excluded by that positive evidence. An active bridge would add a tool and change the system content.
-- **Smoke test, then a disclosed calibration batch.** The calibration batch is one uncounted run of each task. It settles the pinned receipt digests and the quote policy, and is followed by a re-freeze. Calibration outputs are reported as calibration and never scored.
+- **Isolation:** every launch is one fresh, single-turn Pi session on role_host's Claude subscription container lane (2026-11-25, §14):
+  - a networkless container with a placeholder credential; the host egress proxy injects the real one;
+  - only the pinned Claude provider extension;
+  - no tools, no skills and no context files;
+  - the system prompt replaced by the agent's prompt file (`p7-arm` or `p7-scorer`);
+  - one request at most;
+  - an empty scratch cwd.
+- **Receipts:** every launch is checked from outside the model, through the role_host records (RUNBOOK §2). Findings are sorted into violations, provider failures and missing evidence (never read as zero).
+  - **Launch contract:** Pi's exact argv, from the host-only turn spec.
+  - **Tool availability:** the empty tool list on the request to Anthropic, from the host proxy, and no tool executions.
+  - **Requests:** exactly one request admitted and settled.
+  - **Actual call:** requested and served model, effort and subscription billing verdict, from the host proxy; provider, model and effort on the assistant message.
+  - **Context:** system sections and preamble from Pi's events. The request's system-prompt digest and message count are compared to the values pinned from calibration.
+  - **Custody:** one user turn carrying the planned task text. The output is the final assistant text, taken by the pipeline from the record, and each session id is bound to one record.
+- **No subagent machinery:** the lane runs no subagent extension, supervisor bridge or acceptance contract, which were the defects of the first smoke (§14).
+- **Smoke test, then a disclosed calibration batch.** The smoke launches each agent once. The calibration batch is one uncounted arm run of each task. Together they settle the pinned receipt values and the quote policy, and are followed by a re-freeze. Calibration outputs are reported as calibration and never scored.
 - **Order:** a seeded interleaving across cells.
 - **Failures:**
   - invalid extractions and incomplete prose (no real FLAGS section, or for A1 no numbered list) are final;
@@ -289,7 +291,8 @@ Nothing is pooled across inputs as if independent.
 | Fixtures without labels | Done; digests in `runs/plan.json` |
 | Concept list, schema v3, templates, rubric v3, scorer | Done |
 | Comparator v3: decision table, coverage, entailment, citation and authority reported separately, quote checks | Done; 56 tests in `test_comparator.py`, including every counterexample in re-review findings B–D and representative extractions over the fixture and Case F texts |
-| Pipeline rev 3: receipts and custody, attempt rules, adjudication, stop gate, fallback pairing, versioned scoring, reply validation, report joins | Done; 16 offline tests in `test_pipeline.py`, including a mixed-status batch carried through to item outcomes |
+| Pipeline rev 3: receipts and custody, attempt rules, adjudication, stop gate, fallback pairing, versioned scoring, reply validation, report joins | Done; offline tests in `test_pipeline.py`, including a mixed-status batch carried through to item outcomes |
+| Receipts on the container lane (§14) | Done; offline tests on synthetic host records, one per violation, provider-failure and missing-evidence class |
 | Build and `--check` comparing raw task bytes, canonical plan bytes and asset digests | Done; 2 tests, including CRLF and reserialized plans |
 | Smoke and disclosed calibration batch | Pending the operator's go-ahead (first paid inference) |
 | Pinned receipt expectations and quote policy | After calibration, then re-freeze |
@@ -321,7 +324,10 @@ python3 -I -B experiments/perspective-intent-research/p7-run1/build_tasks.py --c
 - **Excerpt verification:** B-1539 is verified through the Stage 0 excerpt, not the raw session.
 - **Candidate alignment:** the comparator does not reason about conditions. Several binding candidates combine only when the extractor marks them aligned or they form a designated baseline, so an extractor's alignment marking is trusted as typing.
 - **Owner aliases:** names match only as listed by the extractor; a missed alias can read as a mismatch.
-- **Receipt limits:** the receipt checks what pi-subagents records. Pinned digests come from the calibration observation, not from an independent derivation of the launch contract; the native `launchContractDigest` is recorded but includes the task, so it is not compared to a constant.
+- **Receipt limits:**
+  - Host-only records establish the launch, tools, request count, models, effort and billing. The user turn and the final text come from Pi's events file, written inside the container; the model has no tools to alter it, but it is not host-written.
+  - The proxy logs digests, not content. The pinned system digest and message count come from the calibration observation, not from an independent derivation, and cover Claude Code's identity block and Pi's `cwd` section as well as the agent prompt.
+  - The billing verdict is the provider's response header, not a quota measurement.
 - **Quote strictness:** under `strict`, one transcription error invalidates a whole extraction. Attempted-run rates are reported for that reason.
 
 ## 12. Response to the review of revision 1
@@ -349,7 +355,7 @@ The re-review ([`review-r2.md`](../../../reviews/p7-run1-protocol-astra-20261124
 
 | Finding | Change |
 |---|---|
-| A (receipt observes use, not availability; output not bound) | The receipt checks `toolsAdded` at every system message. It checks provider, model and effort on every assistant call. System content and the user wrapper are compared to digests pinned from calibration. Findings are sorted into violation, provider failure and missing evidence, with missing never read as zero. The planned task must appear in the single user turn, and the output file must equal the final assistant text. A native run id binds to one record. Bridge: no global config edit. The installed tool has no per-launch override, so positive tool and content evidence excludes the bridge, and calibration stops the run if a bridge appears. **Data-dependent:** the exact digests, pinned after calibration |
+| A (receipt observes use, not availability; output not bound) | The receipt checks `toolsAdded` at every system message. It checks provider, model and effort on every assistant call. System content and the user wrapper are compared to digests pinned from calibration. Findings are sorted into violation, provider failure and missing evidence, with missing never read as zero. The planned task must appear in the single user turn, and the output file must equal the final assistant text. A native run id binds to one record. Bridge: no global config edit. The installed tool has no per-launch override, so positive tool and content evidence excludes the bridge, and calibration stops the run if a bridge appears. **Data-dependent:** the exact digests, pinned after calibration. *Superseded by the route change in §14, which rebuilds the receipt on host records* |
 | B (supported reachable with unknown or lost requirements) | A baseline is required for complete and unchanged entries, and enumerated independently of candidate keys. Binding status is compared (`status_weakened`). Empty, ambiguous, unlinked or unaligned comparisons are never supported or conflicts. Several candidates need declared alignment. Ambiguous candidates are not hidden. Roles are decomposed into narrowed and widened parts, with added and lost values. Coverage, entailment, citation and standing are reported separately. Citation is per property, and a general citation no longer makes NC-C's restatement "flagged" |
 | C (authority pooling; plan flags) | Authority is checked per changed property, with source-quoted owners. Outcomes are matched, mismatched, decision not shown or not established. The adopter means who decided, not who stated. E4b is reworded so it does not assert historical non-approval. `owner_unresolved` fires on an unspecified owner where an outcome is required, while `any` records deliberate openness. `independence_unstated` fires whatever the verifier's status. Typed credit comes through flags only. Tests cover honest typings and positive controls |
 | D (provenance validation) | Every relied-on quote is checked under the named `quote-norm/v1`. Quote failures are separated from shape errors. Malformed values become extraction errors, not crashes. Duplicate readings and `any` mixed with roles are rejected. Reference targets and properties are validated. **Data-dependent:** the quote policy, confirmed in calibration. Attempted-run rates are reported |
@@ -357,3 +363,23 @@ The re-review ([`review-r2.md`](../../../reviews/p7-run1-protocol-astra-20261124
 | F (fallback pairing; scorer validation; phase blinding) | Fallback replies are validated against their own indexed target. Every target gets one logged outcome, a comparison needs a complete batch, and before and after values are recorded. Scorer replies are fully validated: input, phases, items, answers, census classes and coverage, weakening. Quotes are phase-local, `NO SUPPORTING SPAN` covers absence, and phase material is delimited. Paired, unblinded phase judging is disclosed, and every transition and resolution is human-checked |
 | G (report; scorer custody) | Score batches are versioned and bound to attempt and comparator digests. An inconsistent batch is refused before any write, and old batches are kept. Comparator outputs are named by digest, so recomputation is verified and a re-freeze keeps both. `report` joins the ledger, usage by stage, final replies, adjudications, item rates, census, weakening and M3 item transitions. A mixed-status batch is tested end to end |
 | Build residual | `--check` compares raw task bytes and canonical plan bytes |
+
+## 14. Launch route change (2026-11-25)
+
+The first smoke (`runs/smoke/1.json`, one paid call, not counted) ran through pi-subagents and failed its receipt:
+- the supervisor bridge was active;
+- an acceptance contract was injected;
+- the system message recorded no tool manifest.
+
+It also exposed a pipeline defect: the system digest hashed an empty `content` field rather than the sections.
+
+The operator approved moving launches to role_host's Claude subscription container lane, after its offline qualification and a live smoke ([S3 record](../../../records/pi-container-claude-sdk-s3-20261125/README.md)). That smoke included a request with Pi's system prompt replaced, which was served on the subscription (`allowed`, overage `rejected`).
+
+Changes:
+- **Launch:** RUNBOOK §2's role_host command replaces the `subagent` call.
+- **Agent files:** now hold only each agent's system prompt.
+- **Receipt:** rebuilt on the host records, as summarized in §8. Tool availability now comes from the request itself, and the system check uses the sections and the proxy's request digest.
+- **Commands:** record commands take the host state root and session id, and the pipeline takes the output from the record.
+- **Smoke:** launches both agents.
+
+The experimental design, inputs, rubric, comparator and scoring are unchanged.
