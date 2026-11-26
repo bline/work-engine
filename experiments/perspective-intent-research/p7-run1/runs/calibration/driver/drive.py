@@ -16,6 +16,8 @@ LOG = H / "drive.jsonl"
 TASKS = ["A1-F.A1", "A2-F.M1", "A2-F.M2", "A3-F.M1", "A3-F.M2", "NC-A.M1", "NC-A.M2", "NC-B.M1", "NC-B.M2",
          "NC-C.M1", "NC-C.M2", "T1.M1", "T1.M2", "T2.M1", "T2.M2"]
 H.mkdir(parents=True, exist_ok=True)
+if len(sys.argv) > 1:  # re-calibration of named tasks only (no smoke)
+    TASKS = sys.argv[1:]
 seen = {}
 
 
@@ -92,7 +94,7 @@ def summary(rc):
 
 smoke_file = H / "smoke-task.md"
 smoke_file.write_text("Reply with the single word READY.\n")
-for agent in ("p7-arm", "p7-scorer"):
+for agent in (("p7-arm", "p7-scorer") if len(sys.argv) == 1 else ()):
     label = f"smoke-{agent}"
     sid = launch(label, agent, smoke_file)
     code, rec = pipeline("record-smoke", str(H), sid, *([agent] if agent != "p7-arm" else []))

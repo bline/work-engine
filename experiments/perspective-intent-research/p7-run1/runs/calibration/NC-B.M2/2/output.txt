@@ -1,0 +1,59 @@
+```json
+{"schema": "obligation-extract/v3", "entries": [
+{"id": "P1", "document": "DOC-1", "role": "parent",
+ "span": "The Host owns the child, same-session framed handshake, and exact stop.",
+ "fields": {
+  "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+  "path_fact": {"status": "binding", "value": ["same_system_instance", "exact_identity"]}
+ }},
+{"id": "P2", "document": "DOC-1", "role": "parent",
+ "span": "The explicitly accepted cancel for the owned, still-held session concludes only after bounded receiver exit collection and exact container removal observed against the owned identity.",
+ "fields": {
+  "path_fact": {"status": "binding", "value": ["exact_identity", "ordered_before_effect"]},
+  "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+ }},
+{"id": "P3", "document": "DOC-1", "role": "parent",
+ "span": "Clean cancel additionally requires that the Host itself performs the normal removal of the original container and records an affirmative, attributable result for that removal. Removal by any other actor does not satisfy clean cancel, even if the container is afterwards absent.",
+ "fields": {
+  "initiator": {"status": "binding", "value": ["acting_component"]},
+  "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+  "path_fact": {"status": "ambiguous", "value": [], "readings": [["exact_identity"], ["exact_identity", "no_fallback_action"]]},
+  "acceptance_evidence": {"status": "binding", "value": ["self_report", "actor_attribution"]}
+ },
+ "semantics_owner": {"status": "binding", "names": ["receipt-semantics owner"], "document": "DOC-1", "span": "Owner decision (receipt-semantics owner, recorded in this contract):"}},
+{"id": "P4", "document": "DOC-1", "role": "parent",
+ "span": "An independent post-exit check that the original container is absent is also required.",
+ "fields": {
+  "verifier": {"status": "binding", "value": ["independent_observer"]},
+  "verifier_independence": {"status": "binding", "value": ["required"]},
+  "path_fact": {"status": "binding", "value": ["exact_identity", "ordered_before_effect"]},
+  "acceptance_evidence": {"status": "binding", "value": ["independent_check", "outcome_observed"]}
+ },
+ "semantics_owner": {"status": "binding", "names": ["receipt-semantics owner"], "document": "DOC-1", "span": "Owner decision (receipt-semantics owner, recorded in this contract):"}},
+{"id": "D1", "document": "DOC-2", "role": "derived",
+ "span": "Required: report clean cancel only when the Host's own normal removal succeeded with an attributable result, and the independent post-exit absence check also passed.",
+ "fields": {
+  "initiator": {"status": "binding", "value": ["acting_component"]},
+  "outcome_owner": {"status": "binding", "value": ["acting_component"]},
+  "verifier": {"status": "binding", "value": ["independent_observer"]},
+  "verifier_independence": {"status": "binding", "value": ["required"]},
+  "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+  "acceptance_evidence": {"status": "ambiguous", "value": [], "readings": [["actor_attribution", "independent_check"], ["actor_attribution", "independent_check", "failure_reported_distinctly"]]}
+ },
+ "asserted_as": "inherited",
+ "scope": "complete",
+ "baseline": ["P3", "P4"],
+ "references_made": [
+  {"kind": "specific", "text": "The contract's terminal cleanup section, in its recorded owner decision", "target_document": "DOC-1", "properties": ["initiator", "outcome_owner", "verifier", "verifier_independence", "path_fact", "acceptance_evidence"]}
+ ],
+ "support_candidates": {
+  "initiator": ["P3"],
+  "outcome_owner": ["P3"],
+  "verifier": ["P4"],
+  "verifier_independence": ["P4"],
+  "path_fact": ["P2", "P4"],
+  "acceptance_evidence": ["P3", "P4"]
+ },
+ "candidate_alignment": {"acceptance_evidence": "same_condition"}}
+]}
+```

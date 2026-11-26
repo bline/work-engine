@@ -1,0 +1,67 @@
+```json
+{
+  "schema": "obligation-extract/v3",
+  "entries": [
+    {
+      "id": "DOC-1-E1",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Before it returns, the renderer must delete the temporary file it created and record in its own result whether the deletion succeeded.",
+      "fields": {
+        "initiator": {
+          "status": "binding",
+          "value": ["acting_component"]
+        },
+        "outcome_owner": {
+          "status": "binding",
+          "value": ["acting_component"]
+        },
+        "verifier": {
+          "status": "binding",
+          "value": ["acting_component"]
+        },
+        "verifier_independence": {
+          "status": "binding",
+          "value": ["not_required"]
+        },
+        "path_fact": {
+          "status": "binding",
+          "value": ["exact_identity", "ordered_before_effect"]
+        },
+        "acceptance_evidence": {
+          "status": "binding",
+          "value": ["self_report"]
+        }
+      }
+    },
+    {
+      "id": "DOC-1-E2",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "A render whose deletion failed reports cleanup_failed; it is not reported as a clean render.",
+      "fields": {
+        "initiator": {
+          "status": "binding",
+          "value": ["acting_component"]
+        },
+        "outcome_owner": {
+          "status": "binding",
+          "value": ["acting_component"]
+        },
+        "verifier": {
+          "status": "binding",
+          "value": ["acting_component"]
+        },
+        "verifier_independence": {
+          "status": "binding",
+          "value": ["not_required"]
+        },
+        "acceptance_evidence": {
+          "status": "binding",
+          "value": ["self_report", "failure_reported_distinctly"]
+        }
+      }
+    }
+  ]
+}
+```

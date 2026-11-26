@@ -1,0 +1,601 @@
+```json
+{
+  "schema": "obligation-extract/v3",
+  "entries": [
+    {
+      "id": "D1-placement-order",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Select a separate Host-owned, controlled qualification arm before reading provider credentials, binding provider transport, wiring a task-effect relay, or servicing the controller.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["other"], "other_text": "Host-owned, controlled qualification arm"},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D1-same-launch-path",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "It shares the exact selected Pi receiver/container launch, registration, and checked-ready path with ordinary serve.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity"]}
+      }
+    },
+    {
+      "id": "D1-no-substitute-profile",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "A provider-less qualification profile with a different receiver/tool surface cannot substitute.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity", "no_fallback_action"]}
+      }
+    },
+    {
+      "id": "D1-tool-names-validation",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Host code validates the actual reported names against the pinned profile (pi_coding.rs), then the controller checks same-session idle (pi_host_serve.rs). Retain that actual validated list, not one recomputed from policy.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["other"], "other_text": "Host code validates the actual reported names against the pinned profile"},
+        "path_fact": {"status": "binding", "value": ["same_system_instance", "ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["self_report", "outcome_observed"]}
+      }
+    },
+    {
+      "id": "D1-fresh-inspection",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Resolve the Docker container by owned identity and require a fresh pinned-client inspection after same-session ready while the no-effects hold still applies.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["other"], "other_text": "fresh pinned-client inspection"},
+        "path_fact": {"status": "binding", "value": ["exact_identity", "same_system_instance", "ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D1-host-observation-not-independent",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Host-attributed Docker and receiver observations are not independent attestation of the daemon/kernel or of continuing liveness.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["actor_attribution"]}
+      }
+    },
+    {
+      "id": "D1-forbidden-intent-counts",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "An attempted forbidden intent is a qualification refusal even when nothing entered. Unavailable counts are not zero.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D1-activation-separate-design",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "if an owner later needs to activate a same live process, that requires a separate design for attaching authority while held and re-observing currentness at the actual transition.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["other"], "other_text": "an owner"},
+        "path_fact": {"status": "binding", "value": ["same_system_instance", "ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D1-cancel-cleanup",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "The explicitly accepted cancel for the owned, still-held session uses session-correlated bridge_close and concludes only after bounded receiver/attach exit collection and exact container removal observed against the owned identity.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity", "same_system_instance", "ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D1-held-cancelled-report",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Report held_cancelled only after those checks; if process/container state is unavailable, retain a cleanup-unknown result and any known diagnostics.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D1-repeated-cancel",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Repeated or mismatched cancel is not a new teardown authority.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["other"], "other_text": "explicitly accepted cancel for the owned, still-held session"}
+      }
+    },
+    {
+      "id": "D1-distinct-failures",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Controller EOF, malformed input, receiver failure, deadline, and failed containment stay distinct refusal/failure paths and retain diagnostics; none becomes held_cancelled.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["no_fallback_action"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D1-host-owner-implement",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "Host owner: implement the isolated admission arm and qualification-only terminal observation; verify registration is the same selected profile before claiming scope.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["other"], "other_text": "Host owner"},
+        "verifier": {"status": "binding", "value": ["other"], "other_text": "Host owner"},
+        "path_fact": {"status": "binding", "value": ["exact_identity", "ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D1-rl-independent-consumer",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "RL: verify bindings and refusal semantics as independent consumer only after the Host subject is pinned.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["independent_observer"]},
+        "verifier_independence": {"status": "binding", "value": ["required"]},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["independent_check"]}
+      },
+      "semantics_owner": {"status": "binding", "names": ["RL", "Research Lifecycle"], "document": "DOC-2", "span": "RL owns task-host and lifecycle admission/receipt semantics"}
+    },
+    {
+      "id": "D1-real-positive-fixture",
+      "document": "DOC-1",
+      "role": "parent",
+      "span": "A fake controller/receiver can test individual failure branches; only real selected receiver + Docker qualifies the positive fixture.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity", "no_fallback_action"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D2-retention-cap",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Keep the 8 MiB retention cap unchanged while measuring per-send materialization, unique storage and replay/transfer separately.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["other"], "other_text": "measuring per-send materialization, unique storage and replay/transfer separately"}
+      }
+    },
+    {
+      "id": "D2-keep-hold-unestablished",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "If a fact required for activation cannot be observed or enforced, keep the hold and record precisely what remains unestablished.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D2-name-mounts-observer",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Separately name every allowed mount, the allowed IPC observations/operations, and any fact requiring an observer independent of the Host.",
+      "fields": {
+        "verifier": {"status": "ambiguous", "value": [], "readings": [["independent_observer"], ["other"]], "other_text": "Docker observations may establish named properties of the actual container inside the trusted Host/daemon boundary"},
+        "verifier_independence": {"status": "ambiguous", "value": [], "readings": [["required"], ["not_required"]]}
+      }
+    },
+    {
+      "id": "D2-no-credential-mounts",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Repository/task/installation state and provider credentials are not container mount inputs.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["other"], "other_text": "provider credentials are not container mount inputs"}
+      }
+    },
+    {
+      "id": "D2-explicit-host-gate",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "If neither can establish readiness without effects, record the need for an explicit Host gate before proceeding.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D2-bind-readiness",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Bind the proposed readiness observation to selection/config and installation, host and executable identities, protocol, composition and job digest, container ID and inspected profile, and the effective tool proof.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D2-distinguish-sources",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Keep expected policy, Docker-observed facts, pinned/runtime-checked facts and Host protocol statements distinguishable.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["actor_attribution"]}
+      }
+    },
+    {
+      "id": "D2-currentness-gate",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Check currentness before any activation; missing, stale, mismatched or unavailable evidence cannot release the gate.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect", "no_fallback_action"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D2-held-readiness-receipt",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Publish only a held-readiness receipt at this stage, with a scoped claim and a terminal outcome on refusal. A receipt is neither activation nor research-result publication.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      },
+      "semantics_owner": {"status": "binding", "names": ["RL", "Research Lifecycle"], "document": "DOC-2", "span": "RL owns task-host and lifecycle admission/receipt semantics"}
+    },
+    {
+      "id": "D2-offline-proof",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "A pinned controlled fixture should reach held readiness without transport entry or task effect.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    },
+    {
+      "id": "D2-cleanup-verify",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Verify no leftover child/container, or retain a named cleanup-unknown outcome.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed", "failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D2-resolve-observers",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Resolve who observes what and the currentness interval with the protection owner before asserting production readiness.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["other"], "other_text": "the protection owner"},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D2-protocol-change-coordination",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Any change to the shared Host protocol needs cross-owner coordination and new pin/evidence treatment.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["coordinator"]}
+      }
+    },
+    {
+      "id": "D2-u3a-missing-head",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Historical evidence remains historical; missing head must not be mislabeled as verified.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D2-e1-consumer-enforced",
+      "document": "DOC-2",
+      "role": "parent",
+      "span": "Production eligibility must be explicit and enforced by the consumer; no promotion of H2 or Step 4 evidence.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["other"], "other_text": "enforced by the consumer"}
+      }
+    },
+    {
+      "id": "D3-h1-ordering",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Held selection precedes controller servicing and any credential read, transport construction or task relay/lease attachment.",
+      "fields": {
+        "outcome_owner": {"status": "binding", "value": ["other"], "other_text": "Host owner; source boundary plus targeted executable tripwires"},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D3-h1-tripwires",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Test with failing tripwires at actual construction/load boundaries; do not infer absence from no successful calls or unset env alone.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["other"], "other_text": "failing tripwires at actual construction/load boundaries"}
+      }
+    },
+    {
+      "id": "D3-h1-selector",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Use an explicit, separate qualification entrypoint or launch variant, available only in controlled-proof; ordinary serve, installed selection and non-proof builds refuse the selector. Controller input cannot select or change mode.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["other"], "other_text": "explicit, separate qualification entrypoint or launch variant, available only in controlled-proof"}
+      }
+    },
+    {
+      "id": "D3-h2-no-effects",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Before ready and while held: matching turn/start, provider intent, and task/tool intent cannot enter effects; no generic start or activation command escapes.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["other"], "other_text": "Host owner; independent injected-frame/state tests"},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]}
+      }
+    },
+    {
+      "id": "D3-h2-intent-invalidates",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "An unexpected effect intent invalidates qualification even when blocked; retain observed/refused/entered counts separately.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-h2-receiver-evidence",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Inject a provider attempt refused locally by the receiver that emits no Host request: receiver evidence must prevent a clean pass despite zero Host requests.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["self_report", "failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-h2-no-false-success",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Reject wrong pin/profile/session, active or duplicate ready, and wrong/additional/missing tool name. Show that no false ready or terminal success is produced.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity", "same_system_instance"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-h3-cancel-authority",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Wrong-session, premature or repeated cancel creates no new teardown authority; failure termination may still clean up under the Host's existing ownership.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["other"], "other_text": "cleanup under the Host's existing ownership"},
+        "path_fact": {"status": "binding", "value": ["same_system_instance"]}
+      }
+    },
+    {
+      "id": "D3-h3-bounded-failure",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Each must terminate as a bounded failure with a cleanup disposition without a later controller cancel or EOF; scripted peers suffice.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-h3-distinct-outcomes",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "EOF/malformed input, receiver failure, timeouts and failed/missing cleanup observation remain refusal/failure, never held_cancelled. Distinguish confirmed removal, removal failure and unknown cleanup.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-h4-positive-sequence",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "matching receiver completion and successful bounded receiver/attach exits without fallback stop/kill → successful independent post-exit query confirming the original full container ID absent on the trusted launch daemon.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["other"], "other_text": "successful independent post-exit query"},
+        "verifier_independence": {"status": "ambiguous", "value": [], "readings": [["required"], ["not_required"]]},
+        "path_fact": {"status": "binding", "value": ["exact_identity", "same_system_instance", "no_fallback_action", "ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed", "independent_check"]}
+      }
+    },
+    {
+      "id": "D3-h4-cancel-not-substituted",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "The pinned receiver's correlated completion may establish consumption; EOF/failure closure cannot substitute for the accepted cancel.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["no_fallback_action"]},
+        "acceptance_evidence": {"status": "binding", "value": ["self_report"]}
+      }
+    },
+    {
+      "id": "D3-h4-reconcile",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Reconcile receiver and Host observations through exit; show no forbidden attempt or entered turn, provider dispatch, tool or snapshot action, and no owned leftover child/container.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed", "self_report"]}
+      }
+    },
+    {
+      "id": "D3-h4-missing-not-pass",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "A missing observation is not a pass.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-h5-negatives",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Mismatched container identity, job/pin, prohibited mount or network, and missing/failed fresh inspection never yield a valid held-ready record.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-h5-replacement",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "no observation or destructive action on the replacement can stand in for the original. Test daemon mismatch or unknown identity as unqualified, not confirmed absence.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity", "same_system_instance", "no_fallback_action"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-r1-consumer-review",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Cross-check binding, negative claims, and cleanup result against retained evidence.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["independent_observer"]},
+        "verifier_independence": {"status": "binding", "value": ["required"]},
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["independent_check"]}
+      },
+      "semantics_owner": {"status": "binding", "names": ["RL", "Research Lifecycle"], "document": "DOC-2", "span": "RL owns task-host and lifecycle admission/receipt semantics"}
+    },
+    {
+      "id": "D3-r1-separate",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "RL's consumer check (R1) runs against the pinned candidate and witness, read-only and separate from Host construction.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["independent_observer"]},
+        "verifier_independence": {"status": "binding", "value": ["required"]}
+      }
+    },
+    {
+      "id": "D3-actual-tool-list",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Keep evidence for the actual validated receiver tool list (snapshot read, question open, result publish; no shell), not the requested list copied from config.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["self_report", "outcome_observed"]}
+      }
+    },
+    {
+      "id": "D3-no-collapsed-verified",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Expected policy, source pins, verified runtime facts and unobserved facts must not collapse into one verified flag.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["actor_attribution"]}
+      }
+    },
+    {
+      "id": "D3-label-negative-observations",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Label negative observations by observer and interval; Host-side zero is not receiver-side zero.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["actor_attribution"]}
+      }
+    },
+    {
+      "id": "D3-ready-digest",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Terminal: require the exact ready digest for every held_cancelled and for failures after ready; omit it only on failures without a ready record.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity"]}
+      }
+    },
+    {
+      "id": "D3-forbidden-attempt-fails",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Missing, inconsistent or nonzero forbidden-attempt evidence fails H4. Preserve failure evidence and cleanup disposition even without readiness.",
+      "fields": {
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-same-daemon",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Bind observation, destructive cleanup (including failure paths), and every confirmed absence result to the same trusted Docker daemon as launch and the original owned full container ID.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["same_system_instance", "exact_identity"]}
+      }
+    },
+    {
+      "id": "D3-cleanup-unknown",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Never act by name on a replacement. If create is uncertain and trusted identity cannot be recovered, report cleanup unknown; an empty name lookup or arbitrary inspect failure cannot confirm absence.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity", "no_fallback_action"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-ordinary-launch-refusal",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "missing required lifecycle gate or hosted transport still refuses before create; ordinary zero-turn completion and EOF retain their existing failure diagnostics and cannot produce held success.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-no-prior-evidence",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Do not label H4 passed based on existing Step 4 or #6069.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["no_fallback_action"]}
+      }
+    },
+    {
+      "id": "D3-coordination-acceptance",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Dev-vertical owns coordination, result collection and the separate acceptance decision.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["coordinator"]},
+        "verifier": {"status": "binding", "value": ["other"], "other_text": "Dev-vertical owns coordination, result collection and the separate acceptance decision"}
+      }
+    },
+    {
+      "id": "D3-separate-review",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "An implementation review, if authorized, should start separately from the builder and not substitute RL's consumer check for code review.",
+      "fields": {
+        "verifier": {"status": "binding", "value": ["reviewer"]},
+        "verifier_independence": {"status": "binding", "value": ["required"]}
+      }
+    },
+    {
+      "id": "D3-report-blocker",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "If using the same receiver registration without constructing effect capabilities turns out not to be possible, report the exact blocker rather than qualifying a different provider-less tool surface or lifting the hold.",
+      "fields": {
+        "path_fact": {"status": "binding", "value": ["exact_identity", "no_fallback_action"]},
+        "acceptance_evidence": {"status": "binding", "value": ["failure_reported_distinctly"]}
+      }
+    },
+    {
+      "id": "D3-future-activation",
+      "document": "DOC-3",
+      "role": "parent",
+      "span": "Any future activation path requires separate authority and a fresh same-process observation at the transition; no U4-A receipt is reusable as that permit.",
+      "fields": {
+        "initiator": {"status": "binding", "value": ["other"], "other_text": "separate authority"},
+        "path_fact": {"status": "binding", "value": ["same_system_instance", "ordered_before_effect"]},
+        "acceptance_evidence": {"status": "binding", "value": ["outcome_observed"]}
+      }
+    }
+  ]
+}
+```

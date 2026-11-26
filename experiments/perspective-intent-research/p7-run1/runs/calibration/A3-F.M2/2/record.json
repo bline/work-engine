@@ -1,0 +1,62 @@
+{
+  "assessed_status": "valid",
+  "error": null,
+  "leakage_hits": [],
+  "output_chars": 84657,
+  "output_sha256": "a9c6cc0f5fbf21df896a3ddec4270303808849729929fe4b93fea4e7c11f54e5",
+  "quote_failures": [],
+  "receipt": {
+    "agent": "p7-arm",
+    "cwd": "/home/bline/cbm-work/p7-run1-scratch",
+    "events_sha256": "094ac3bb93e547f90809f00b5a87083688cc70b59a236bf83defbb6b77f1720f",
+    "exit_code": 0,
+    "final_text_sha256": "a9c6cc0f5fbf21df896a3ddec4270303808849729929fe4b93fea4e7c11f54e5",
+    "fingerprint_sha256": "d8acc6807f4efed0185b5d21c7a0118a85d37c62be8d10fd3d205442c09fd059",
+    "host_state": "/home/bline/cbm-work/p7-run1-host",
+    "observations": {},
+    "outcome": "completed",
+    "provider_failure": [],
+    "proxy_log_sha256": "eee24dcb3f734d676740858ed348a782e5ac2504f3732dd099f3db0f66027de4",
+    "request_messages": 2,
+    "requests": [
+      {
+        "billing_verdict": "allowed",
+        "disposition": "completed",
+        "effort": "high",
+        "n": 1,
+        "response_model": "claude-opus-5-5",
+        "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+        "tool_names": [],
+        "tools_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "usage_status": "reported"
+      }
+    ],
+    "run_id": "2ba2f0e4-5530-4fab-a810-1f2f92c72b7c",
+    "session_id": "2ba2f0e4-5530-4fab-a810-1f2f92c72b7c",
+    "spec_sha256": "c4bd0975d664720a7d39d8b0039d9731ea5e67766c0c80efbffb20691ef2b160",
+    "state": "stopped",
+    "status_sha256": "d1113231121767395743f2a7fabaca6a20d2738a9d9825318d606dd2cd8f3ebc",
+    "stop_reason": "stop",
+    "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+    "unestablished": [],
+    "usage": [
+      {
+        "durationMs": 651681,
+        "usage": {
+          "cache_creation_input_tokens": 33942,
+          "cache_read_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 33942,
+          "ephemeral_5m_input_tokens": 0,
+          "input_tokens": 2,
+          "output_tokens": 87800
+        }
+      }
+    ],
+    "user_wrapper_sha256": "9ab8802b2f26e424322215f7811bc73dc05d694671269355a99d307d614c6c6f",
+    "violations": []
+  },
+  "receipt_status": null,
+  "stage": "calibration",
+  "status": "calibration",
+  "task_id": "A3-F.M2"
+}

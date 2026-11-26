@@ -1,0 +1,99 @@
+{
+  "assessed_status": "invalid_extraction",
+  "error": "6 quote failure(s)",
+  "leakage_hits": [],
+  "output_chars": 15850,
+  "output_sha256": "16b6a7a7639b3b6aab1458e7c7612cdae8c82ce73a882f32a8cd14b21cbcbb8d",
+  "quote_failures": [
+    {
+      "document": null,
+      "entry": "D1-F3-revocation-ordering",
+      "text": "owning authority",
+      "where": "semantics_owner.names"
+    },
+    {
+      "document": null,
+      "entry": "D1-F3-irrevocable-point",
+      "text": "owning authority",
+      "where": "semantics_owner.names"
+    },
+    {
+      "document": null,
+      "entry": "D1-disposition-contents",
+      "text": "owning authority",
+      "where": "semantics_owner.names"
+    },
+    {
+      "document": null,
+      "entry": "D1-park-route",
+      "text": "owning authority",
+      "where": "semantics_owner.names"
+    },
+    {
+      "document": null,
+      "entry": "D2-one-shot-commitment",
+      "text": "owning authority",
+      "where": "semantics_owner.names"
+    },
+    {
+      "document": null,
+      "entry": "D2-revoke-vs-admit",
+      "text": "owning authority",
+      "where": "semantics_owner.names"
+    }
+  ],
+  "receipt": {
+    "agent": "p7-arm",
+    "cwd": "/home/bline/cbm-work/p7-run1-scratch",
+    "events_sha256": "ccefc5767c6439ac99851af24f0105fd4c6888073999cfe082065173d7af4689",
+    "exit_code": 0,
+    "final_text_sha256": "16b6a7a7639b3b6aab1458e7c7612cdae8c82ce73a882f32a8cd14b21cbcbb8d",
+    "fingerprint_sha256": "f8924ba4d6472d24b5fbaf748d9c8b8f8adac8170b262b4298dc841a2624268c",
+    "host_state": "/home/bline/cbm-work/p7-run1-host",
+    "observations": {},
+    "outcome": "completed",
+    "provider_failure": [],
+    "proxy_log_sha256": "0dc827748bcab79a5330abf413b033be46945072bf3f6ecaec36a7298a0c607b",
+    "request_messages": 2,
+    "requests": [
+      {
+        "billing_verdict": "allowed",
+        "disposition": "completed",
+        "effort": "high",
+        "n": 1,
+        "response_model": "claude-opus-5-5",
+        "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+        "tool_names": [],
+        "tools_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "usage_status": "reported"
+      }
+    ],
+    "run_id": "8e18322f-71fc-4071-a708-d7e0d55c3c48",
+    "session_id": "8e18322f-71fc-4071-a708-d7e0d55c3c48",
+    "spec_sha256": "c3aae6e2db3a328fee6b3d51c43c33145f1cad265de77befcba2dbb109de78b6",
+    "state": "stopped",
+    "status_sha256": "99961f914d17ebf2c561090d1d8f71e969d964e82f4cd05dff23f04ce1c9c695",
+    "stop_reason": "stop",
+    "system_sha256": "d0d24752b108bb79cb0f2b8019e2701553f6e3814d3a94217cc28c4a6e17cbda",
+    "unestablished": [],
+    "usage": [
+      {
+        "durationMs": 138218,
+        "usage": {
+          "cache_creation_input_tokens": 10799,
+          "cache_read_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 10799,
+          "ephemeral_5m_input_tokens": 0,
+          "input_tokens": 2,
+          "output_tokens": 17656
+        }
+      }
+    ],
+    "user_wrapper_sha256": "9ab8802b2f26e424322215f7811bc73dc05d694671269355a99d307d614c6c6f",
+    "violations": []
+  },
+  "receipt_status": null,
+  "stage": "calibration",
+  "status": "calibration",
+  "task_id": "T1.M2"
+}

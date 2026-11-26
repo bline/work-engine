@@ -1,0 +1,110 @@
+```json
+{"schema": "obligation-extract/v3", "entries": [
+{
+"id": "P1",
+"document": "DOC-1",
+"role": "parent",
+"span": "After a job is cancelled, an independent check, run after the job's process has exited, must confirm that the job's container, identified by its full container ID, is absent from the container engine that launched it. If the container is still present, or its state cannot be established, the job is not reported as cleanly cancelled. The requirement does not say how the container is removed or by whom.",
+"fields": {
+"initiator": {"status": "binding", "value": ["any"]},
+"outcome_owner": {"status": "binding", "value": ["any"]},
+"verifier": {"status": "binding", "value": ["independent_observer"]},
+"verifier_independence": {"status": "binding", "value": ["required"]},
+"path_fact": {"status": "binding", "value": ["exact_identity", "same_system_instance", "ordered_before_effect"]},
+"acceptance_evidence": {"status": "binding", "value": ["independent_check", "failure_reported_distinctly"]}
+}
+},
+{
+"id": "D1",
+"document": "DOC-2",
+"role": "derived",
+"span": "We will create each job's container with the container engine's automatic-removal option, so the engine removes the container after the job's process exits.",
+"fields": {
+"initiator": {"status": "ambiguous", "value": [], "readings": [["acting_component"], ["managing_system"]]},
+"outcome_owner": {"status": "selected_realization", "value": ["managing_system"]},
+"path_fact": {"status": "selected_realization", "value": ["ordered_before_effect"]}
+},
+"asserted_as": "realization_choice",
+"scope": "partial",
+"baseline": [],
+"references_made": [
+{"kind": "general", "text": "the cleanup requirement", "target_document": "DOC-1", "properties": ["initiator", "outcome_owner", "path_fact"]}
+],
+"support_candidates": {
+"initiator": ["P1"],
+"outcome_owner": ["P1"],
+"path_fact": ["P1"]
+},
+"adopted_by": {"status": "binding", "names": ["the runner team"], "document": "DOC-2", "span": "Implementation choices (the runner team's, revisable)"}
+},
+{
+"id": "D2",
+"document": "DOC-2",
+"role": "derived",
+"span": "On cancel, the runner issues the stop request to the job's process.",
+"fields": {
+"initiator": {"status": "selected_realization", "value": ["acting_component"]}
+},
+"asserted_as": "realization_choice",
+"scope": "partial",
+"baseline": [],
+"references_made": [
+{"kind": "general", "text": "the cleanup requirement", "target_document": "DOC-1", "properties": ["initiator"]}
+],
+"support_candidates": {
+"initiator": ["P1"]
+},
+"adopted_by": {"status": "binding", "names": ["the runner team"], "document": "DOC-2", "span": "Implementation choices (the runner team's, revisable)"}
+},
+{
+"id": "D3",
+"document": "DOC-2",
+"role": "derived",
+"span": "We will keep the independent post-exit absence check exactly as the requirement states.",
+"fields": {
+"verifier": {"status": "selected_realization", "value": ["independent_observer"]},
+"verifier_independence": {"status": "selected_realization", "value": ["required"]},
+"path_fact": {"status": "selected_realization", "value": ["ordered_before_effect"]},
+"acceptance_evidence": {"status": "selected_realization", "value": ["independent_check"]}
+},
+"asserted_as": "realization_choice",
+"scope": "complete",
+"baseline": ["P1"],
+"references_made": [
+{"kind": "general", "text": "exactly as the requirement states", "target_document": "DOC-1", "properties": ["verifier", "verifier_independence", "path_fact", "acceptance_evidence"]},
+{"kind": "general", "text": "the cleanup requirement", "target_document": "DOC-1", "properties": ["verifier", "verifier_independence", "path_fact", "acceptance_evidence"]}
+],
+"support_candidates": {
+"verifier": ["P1"],
+"verifier_independence": ["P1"],
+"path_fact": ["P1"],
+"acceptance_evidence": ["P1"]
+},
+"adopted_by": {"status": "binding", "names": ["the runner team"], "document": "DOC-2", "span": "Implementation choices (the runner team's, revisable)"}
+},
+{
+"id": "D4",
+"document": "DOC-2",
+"role": "derived",
+"span": "Unchanged from the cleanup requirement: a cancelled job is reported as cleanly cancelled only when the independent post-exit check confirms the container's full ID is absent from the launching engine.",
+"fields": {
+"verifier": {"status": "binding", "value": ["independent_observer"]},
+"verifier_independence": {"status": "binding", "value": ["required"]},
+"path_fact": {"status": "binding", "value": ["exact_identity", "same_system_instance", "ordered_before_effect"]},
+"acceptance_evidence": {"status": "binding", "value": ["independent_check", "failure_reported_distinctly"]}
+},
+"asserted_as": "unchanged",
+"scope": "complete",
+"baseline": ["P1"],
+"references_made": [
+{"kind": "general", "text": "Unchanged from the cleanup requirement", "target_document": "DOC-1", "properties": ["verifier", "verifier_independence", "path_fact", "acceptance_evidence"]}
+],
+"support_candidates": {
+"verifier": ["P1"],
+"verifier_independence": ["P1"],
+"path_fact": ["P1"],
+"acceptance_evidence": ["P1"]
+}
+}
+]}
+```

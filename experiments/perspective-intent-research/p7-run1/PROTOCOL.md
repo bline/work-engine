@@ -1,6 +1,6 @@
 # P7 run 1: pre-registration protocol (revision 3, draft)
 
-**Status:** Draft, not frozen, not authorized to run. Revision 2 answered the review of revision 1 (§12). Revision 3 answers the re-review of revision 2 (§13), and moves launches to the Claude subscription container lane after the first smoke (§14); both reviews are in [`reviews/p7-run1-protocol-astra-20261124/`](../../../reviews/p7-run1-protocol-astra-20261124/README.md). The disclosed, uncounted calibration batch has run (§15): the receipt values are pinned and the quote policy is confirmed, and it found a schema presentation defect that is not yet fixed. Freezing needs that calibration and a passing review (§10). Running needs a separate operator execution go-ahead, which is distinct from the freeze.
+**Status:** Draft, not frozen, not authorized to run. Revision 2 answered the review of revision 1 (§12). Revision 3 answers the re-review of revision 2 (§13), and moves launches to the Claude subscription container lane after the first smoke (§14); both reviews are in [`reviews/p7-run1-protocol-astra-20261124/`](../../../reviews/p7-run1-protocol-astra-20261124/README.md). The disclosed, uncounted calibration batch has run (§15): the receipt values are pinned, a schema presentation defect it found is fixed and re-calibrated, and the quote policy awaits the operator's decision on that data. Freezing needs that calibration and a passing review (§10). Running needs a separate operator execution go-ahead, which is distinct from the freeze.
 **Date:** 2026-11-24
 **Owning design:** [pilot P7 and Stage 1c](../../../design/ideas/pending/pilots/perspective-intent-pilot.md). Execution is specified in [RUNBOOK.md](RUNBOOK.md).
 
@@ -115,7 +115,7 @@ Schema `schema/obligation-extract-v3.json` uses case-neutral role tokens:
   - reference targets and properties;
   - candidates and baselines that resolve to parent entries.
 - **Quote failures** are collected for every relied-on quote: entry spans, reference texts, owner spans, owner names and `other_text`. They use the named normalization `quote-norm/v1`: straight quotes, Markdown emphasis characters removed, whitespace collapsed, contiguous passage only.
-- `QUOTE_POLICY` decides whether any quote failure invalidates the extraction. It is `strict`, confirmed from calibration (§15). Quote failures are recorded and reported either way.
+- `QUOTE_POLICY` decides whether any quote failure invalidates the extraction. It is `strict` in this draft. Calibration data on it is in §15, and the operator's confirmation or change is pending. Quote failures are recorded and reported either way.
 
 An invalid extraction is a recorded invalid run, with no repair.
 
@@ -295,8 +295,9 @@ Nothing is pooled across inputs as if independent.
 | Receipts on the container lane (§14) | Done; offline tests on synthetic host records, one per violation, provider-failure and missing-evidence class |
 | Build and `--check` comparing raw task bytes, canonical plan bytes and asset digests | Done; 2 tests, including CRLF and reserialized plans |
 | Smoke and disclosed calibration batch | Done 2026-11-25 (§15) |
-| Pinned receipt expectations and quote policy | Done (§15) |
-| Schema presentation fix (§15) | Pending the operator's decision |
+| Pinned receipt expectations | Done (§15) |
+| Schema presentation fix (§15) | Done 2026-11-25, operator-approved; the 7 M2 tasks re-calibrated |
+| Quote policy | Pending the operator's decision on the §15 data |
 | Independent re-review (`openai-codex/gpt-6.2-astra`, `xhigh`) | Third review after calibration |
 | **Freeze** | After a passing review: commit and digests recorded here |
 | **Execution go-ahead** | A separate operator decision |
@@ -420,4 +421,17 @@ The environment fingerprint differs on every launch and is recorded, not pinned.
 
 This is an instrument defect, not a model failure, and it would invalidate every review-kind typed run. The records are unchanged: they stay `invalid_extraction` as recorded.
 
-**Quote policy.** No quote failure occurred in any of the 7 typed extractions, including the 3 flattened in the diagnostic. `strict` is confirmed.
+**Quote policy, first batch.** No quote failure occurred in any of the 7 typed extractions, including the 3 flattened in the diagnostic.
+
+**Schema fix and re-calibration (operator-approved).** The derived keys now sit on the entry, each marked "derived entries only" (commit `7dc2b1f9`). That rebuilt the 7 M2 tasks, which were re-calibrated: 7 more subscription requests, recorded as attempt 2 under `runs/calibration/<task>/2/`.
+
+Receipts: all 7 were clean against the pinned values; none was refused or drifted.
+
+Outputs:
+- **Review-kind** (A3-F, NC-B, NC-C): all 3 valid with 0 quote failures. The fix works.
+- **Plan-kind:** NC-A and T2 were valid. Two failed only on quotes:
+  - **A2-F.M2:** 1 failure, a transcription slip: `cleanup under the Host's existing ownership` where the document has `clean up`.
+  - **T1.M2:** 6 failures, one cause. The extractor listed `owning authority` among the owner's names on 6 entries, and no document uses that phrase. The schema asks for names the documents use.
+- **Size:** A3-F.M2 used 87,800 output tokens and completed. A longer output that hits the provider's limit would be a provider failure.
+
+**Quote policy data.** Across both batches, 2 of 14 typed extractions are invalid under `strict`: one slip, and one invented alias repeated across entries. Both are failures the rule exists to catch, and under `strict` each invalidates a whole extraction. The operator decides the policy (RUNBOOK §4). Attempted-run rates are reported either way.
