@@ -11,3 +11,17 @@
 - Review: `review-r2.md`. Same reviewer resumed (run `1562e9c3-9fed-4ec9-815a-d3c12c79b51a`), `openai-codex/gpt-6.2-astra:xhigh`.
 - Verdict: `revise_and_resubmit`; freeze blocked. Original findings 2, 3, 10 closed; others partially closed. New findings A–G (two blockers: receipt does not establish tool availability or bind output to task; comparator can still report `supported` for unassessed obligations).
 - Parent spot checks: system message records `toolsAdded` (22 tools in run d8af0eb0), ignored by `extract_receipt`; pi-subagents documents a per-launch `intercomBridge: {mode: "off"}`; a partial inherited entry with only an ambiguous field returns standing `supported` with no flags.
+
+## Third review (revision 3, after the route change and calibration)
+
+- Subject: `subject-PROTOCOL-r3.md` (byte-identical, commit `da012df4a1f9b204eea4a4ed9bff09f1e0f19dee`, SHA-256 `c7856f94d505ff7f6d3e6a23549a11d0370d4300aa8df47011289ef390d089e4`) with RUNBOOK.md, instruments, and the smoke and calibration records at that commit.
+- Review: `review-r3.md`. Fresh Pi subagent `reviewer`, run `4e42c25d-a6fe-458c-b678-998067fda65d`, `openai-codex/gpt-6.2-astra:xhigh` (ChatGPT/Codex subscription; operator-approved 2026-11-25). Read-only; ran `build_tasks.py --check` and the unit tests (75 passing).
+- Verdict: `revise_and_resubmit`; freeze blocked. Ten findings:
+  - three blockers: positive plan controls have no typed record to earn credit; no pre-dispatch assignment of launches to rows; census and weakening counted despite failed or duplicated judgments;
+  - five high: missing linkage reported as a change; valid-but-unusable or crashing extractions; launch claims beyond what the receipt checks (two extensions); failure classification; report joins;
+  - two medium: lifecycle gates; calibration manifest and denominators.
+- The reviewer independently verified all 24 calibration-era launches against their host records and found no substitution, repair or counting of calibration outputs.
+- Parent spot checks, confirmed:
+  - a derived `ambiguous` field without `value` passes `validate` and raises `KeyError` in `report`;
+  - every turn spec carries two `-e` extensions (the Claude provider and `pi_service_tier.ts`);
+  - on an upstream non-200 the proxy writes an `upstream_error` disposition and a `refused` row, which the receipt classifies as a violation rather than a provider failure.
