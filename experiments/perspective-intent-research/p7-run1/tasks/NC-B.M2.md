@@ -84,15 +84,13 @@ SCHEMA:
     "span": "text quoted from that document",
     "fields": "object mapping property name to {status, value, readings?, other_text?}; omit a property only if it is unspecified",
     "semantics_owner": "parent entries only, optional: {status, names: [every name the documents use for the party that owns the meaning of this requirement], document: the document id that says so, span: text quoted from that document}",
-    "derived_only": {
-      "asserted_as": "one of inherited, proposed, new, realization_choice, unchanged",
-      "scope": "partial or complete",
-      "baseline": "for a complete or unchanged entry: the list of parent entry ids it replaces or restates; otherwise an empty list",
-      "references_made": "list of the references the derived document itself makes for this requirement: {kind: specific|general, text: the citation quoted from the derived document, target_document: a document id or null, properties: [the property names the citation is offered for]}; empty list if it cites nothing",
-      "support_candidates": "object mapping each property to a list of parent entry ids that bear on that property, whether or not they fully state it; empty list if none",
-      "candidate_alignment": "optional object mapping a property to 'same_condition' when its several candidates state requirements on the same thing under the same condition, so they apply together; omit the property otherwise",
-      "adopted_by": "optional: {status, names: [the party the document says decided, approved or adopted this requirement; not a party that merely states, reviews or recommends it], document, span}"
-    }
+    "asserted_as": "derived entries only: one of inherited, proposed, new, realization_choice, unchanged",
+    "scope": "derived entries only: partial or complete",
+    "baseline": "derived entries only: for a complete or unchanged entry: the list of parent entry ids it replaces or restates; otherwise an empty list",
+    "references_made": "derived entries only: list of the references the derived document itself makes for this requirement: {kind: specific|general, text: the citation quoted from the derived document, target_document: a document id or null, properties: [the property names the citation is offered for]}; empty list if it cites nothing",
+    "support_candidates": "derived entries only: object mapping each property to a list of parent entry ids that bear on that property, whether or not they fully state it; empty list if none",
+    "candidate_alignment": "derived entries only: optional object mapping a property to 'same_condition' when its several candidates state requirements on the same thing under the same condition, so they apply together; omit the property otherwise",
+    "adopted_by": "derived entries only: optional: {status, names: [the party the document says decided, approved or adopted this requirement; not a party that merely states, reviews or recommends it], document, span}"
   }
 }
 

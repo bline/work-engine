@@ -29,7 +29,7 @@
   "prompts/scorer.md": "5dfe57a2a73290a5a3186b2385a2d19be0e39a84d882dc39167c4d112aab0b0d",
   "prompts/rubric.json": "74005b8830aec8ad175a7e0f4e2d1ba74c322ee9159d790e2ffbb7f4d2e8273d",
   "prompts/concepts.md": "30f9a5dd0a385f4fafa9ad5a8178aa645e144de615babdfa0bf19883c8f35613",
-  "schema/obligation-extract-v3.json": "b7f611b8739a83793f5722d62ba9ee68adf8fb09361163f6d993a6de14eefeda",
+  "schema/obligation-extract-v3.json": "2d22a0511b6bea3b53119ca4cb5a675ba6c24458197f3f77d46c6dac5de2a21e",
   "comparator.py": "70e4334ad71497bbc26aaedb8c3662d46757d9c2db73dd15e50767c645e164af",
   "pipeline.py": "1076a992e22b681eab599abe9e6aade127151b22e9b7e109766d341132a1d8ba",
   "leakage_terms.txt": "c1da6272c4b1b0132ad8127170be9fa8a6d7130b0be270b12c56c2c46d201a73",
@@ -478,7 +478,7 @@
    "method": "M2",
    "repeat": 1,
    "task_id": "A2-F.M2",
-   "task_sha256": "2719dcc5d643943401074b22d0168bc2374bf3abfb70971e2f82d610178bbab9",
+   "task_sha256": "5521d26a6c5903dccdc72795007e9c2b9e8d3e66c86a9791773060421ea16e8a",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -489,7 +489,7 @@
    "method": "M2",
    "repeat": 2,
    "task_id": "A2-F.M2",
-   "task_sha256": "2719dcc5d643943401074b22d0168bc2374bf3abfb70971e2f82d610178bbab9",
+   "task_sha256": "5521d26a6c5903dccdc72795007e9c2b9e8d3e66c86a9791773060421ea16e8a",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -500,7 +500,7 @@
    "method": "M2",
    "repeat": 3,
    "task_id": "A2-F.M2",
-   "task_sha256": "2719dcc5d643943401074b22d0168bc2374bf3abfb70971e2f82d610178bbab9",
+   "task_sha256": "5521d26a6c5903dccdc72795007e9c2b9e8d3e66c86a9791773060421ea16e8a",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -511,7 +511,7 @@
    "method": "M3",
    "repeat": 1,
    "task_id": "A2-F.M2",
-   "task_sha256": "2719dcc5d643943401074b22d0168bc2374bf3abfb70971e2f82d610178bbab9",
+   "task_sha256": "5521d26a6c5903dccdc72795007e9c2b9e8d3e66c86a9791773060421ea16e8a",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -522,7 +522,7 @@
    "method": "M3",
    "repeat": 2,
    "task_id": "A2-F.M2",
-   "task_sha256": "2719dcc5d643943401074b22d0168bc2374bf3abfb70971e2f82d610178bbab9",
+   "task_sha256": "5521d26a6c5903dccdc72795007e9c2b9e8d3e66c86a9791773060421ea16e8a",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -533,7 +533,7 @@
    "method": "M3",
    "repeat": 3,
    "task_id": "A2-F.M2",
-   "task_sha256": "2719dcc5d643943401074b22d0168bc2374bf3abfb70971e2f82d610178bbab9",
+   "task_sha256": "5521d26a6c5903dccdc72795007e9c2b9e8d3e66c86a9791773060421ea16e8a",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -577,7 +577,7 @@
    "method": "M2",
    "repeat": 1,
    "task_id": "A3-F.M2",
-   "task_sha256": "e14622b70dced76f566842780769bdcff392679bf809771bc4589af5d7073c30",
+   "task_sha256": "ad6040fc412356e19faa4aec9a9c814b8146bdc03acf923fa25be9e9b8bc7af1",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -588,7 +588,7 @@
    "method": "M2",
    "repeat": 2,
    "task_id": "A3-F.M2",
-   "task_sha256": "e14622b70dced76f566842780769bdcff392679bf809771bc4589af5d7073c30",
+   "task_sha256": "ad6040fc412356e19faa4aec9a9c814b8146bdc03acf923fa25be9e9b8bc7af1",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -599,7 +599,7 @@
    "method": "M2",
    "repeat": 3,
    "task_id": "A3-F.M2",
-   "task_sha256": "e14622b70dced76f566842780769bdcff392679bf809771bc4589af5d7073c30",
+   "task_sha256": "ad6040fc412356e19faa4aec9a9c814b8146bdc03acf923fa25be9e9b8bc7af1",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -610,7 +610,7 @@
    "method": "M3",
    "repeat": 1,
    "task_id": "A3-F.M2",
-   "task_sha256": "e14622b70dced76f566842780769bdcff392679bf809771bc4589af5d7073c30",
+   "task_sha256": "ad6040fc412356e19faa4aec9a9c814b8146bdc03acf923fa25be9e9b8bc7af1",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -621,7 +621,7 @@
    "method": "M3",
    "repeat": 2,
    "task_id": "A3-F.M2",
-   "task_sha256": "e14622b70dced76f566842780769bdcff392679bf809771bc4589af5d7073c30",
+   "task_sha256": "ad6040fc412356e19faa4aec9a9c814b8146bdc03acf923fa25be9e9b8bc7af1",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -632,7 +632,7 @@
    "method": "M3",
    "repeat": 3,
    "task_id": "A3-F.M2",
-   "task_sha256": "e14622b70dced76f566842780769bdcff392679bf809771bc4589af5d7073c30",
+   "task_sha256": "ad6040fc412356e19faa4aec9a9c814b8146bdc03acf923fa25be9e9b8bc7af1",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -676,7 +676,7 @@
    "method": "M2",
    "repeat": 1,
    "task_id": "T1.M2",
-   "task_sha256": "3247ffd2a16efdefe7e7a43c738275e01716de1ba8635240db5fac6879f29408",
+   "task_sha256": "fd68f875fae0d85ff1eb3652a90d0d385d7dbcecace21d8a0c64562d45b05889",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -687,7 +687,7 @@
    "method": "M2",
    "repeat": 2,
    "task_id": "T1.M2",
-   "task_sha256": "3247ffd2a16efdefe7e7a43c738275e01716de1ba8635240db5fac6879f29408",
+   "task_sha256": "fd68f875fae0d85ff1eb3652a90d0d385d7dbcecace21d8a0c64562d45b05889",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -698,7 +698,7 @@
    "method": "M2",
    "repeat": 3,
    "task_id": "T1.M2",
-   "task_sha256": "3247ffd2a16efdefe7e7a43c738275e01716de1ba8635240db5fac6879f29408",
+   "task_sha256": "fd68f875fae0d85ff1eb3652a90d0d385d7dbcecace21d8a0c64562d45b05889",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -709,7 +709,7 @@
    "method": "M3",
    "repeat": 1,
    "task_id": "T1.M2",
-   "task_sha256": "3247ffd2a16efdefe7e7a43c738275e01716de1ba8635240db5fac6879f29408",
+   "task_sha256": "fd68f875fae0d85ff1eb3652a90d0d385d7dbcecace21d8a0c64562d45b05889",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -720,7 +720,7 @@
    "method": "M3",
    "repeat": 2,
    "task_id": "T1.M2",
-   "task_sha256": "3247ffd2a16efdefe7e7a43c738275e01716de1ba8635240db5fac6879f29408",
+   "task_sha256": "fd68f875fae0d85ff1eb3652a90d0d385d7dbcecace21d8a0c64562d45b05889",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -731,7 +731,7 @@
    "method": "M3",
    "repeat": 3,
    "task_id": "T1.M2",
-   "task_sha256": "3247ffd2a16efdefe7e7a43c738275e01716de1ba8635240db5fac6879f29408",
+   "task_sha256": "fd68f875fae0d85ff1eb3652a90d0d385d7dbcecace21d8a0c64562d45b05889",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -775,7 +775,7 @@
    "method": "M2",
    "repeat": 1,
    "task_id": "T2.M2",
-   "task_sha256": "b8114195d4f2e066327f2cf436f88b4226798d5dfa3d3f44e5d9a6ff0ae4830c",
+   "task_sha256": "9955e5b99cb74dfcd02275837f89d27fcad40bbde0c61699a3cc21df350d5cd6",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -786,7 +786,7 @@
    "method": "M2",
    "repeat": 2,
    "task_id": "T2.M2",
-   "task_sha256": "b8114195d4f2e066327f2cf436f88b4226798d5dfa3d3f44e5d9a6ff0ae4830c",
+   "task_sha256": "9955e5b99cb74dfcd02275837f89d27fcad40bbde0c61699a3cc21df350d5cd6",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -797,7 +797,7 @@
    "method": "M2",
    "repeat": 3,
    "task_id": "T2.M2",
-   "task_sha256": "b8114195d4f2e066327f2cf436f88b4226798d5dfa3d3f44e5d9a6ff0ae4830c",
+   "task_sha256": "9955e5b99cb74dfcd02275837f89d27fcad40bbde0c61699a3cc21df350d5cd6",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -808,7 +808,7 @@
    "method": "M3",
    "repeat": 1,
    "task_id": "T2.M2",
-   "task_sha256": "b8114195d4f2e066327f2cf436f88b4226798d5dfa3d3f44e5d9a6ff0ae4830c",
+   "task_sha256": "9955e5b99cb74dfcd02275837f89d27fcad40bbde0c61699a3cc21df350d5cd6",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -819,7 +819,7 @@
    "method": "M3",
    "repeat": 2,
    "task_id": "T2.M2",
-   "task_sha256": "b8114195d4f2e066327f2cf436f88b4226798d5dfa3d3f44e5d9a6ff0ae4830c",
+   "task_sha256": "9955e5b99cb74dfcd02275837f89d27fcad40bbde0c61699a3cc21df350d5cd6",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -830,7 +830,7 @@
    "method": "M3",
    "repeat": 3,
    "task_id": "T2.M2",
-   "task_sha256": "b8114195d4f2e066327f2cf436f88b4226798d5dfa3d3f44e5d9a6ff0ae4830c",
+   "task_sha256": "9955e5b99cb74dfcd02275837f89d27fcad40bbde0c61699a3cc21df350d5cd6",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -874,7 +874,7 @@
    "method": "M2",
    "repeat": 1,
    "task_id": "NC-A.M2",
-   "task_sha256": "ae5b2bbbd541ae2cf77a378512b07a8dbc45b714a9586b998684d704962b2100",
+   "task_sha256": "48ffe6e7a60d0a3cb70137e64f3cd361a5f1581385284c60eabad1c23a1fe5bc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -885,7 +885,7 @@
    "method": "M2",
    "repeat": 2,
    "task_id": "NC-A.M2",
-   "task_sha256": "ae5b2bbbd541ae2cf77a378512b07a8dbc45b714a9586b998684d704962b2100",
+   "task_sha256": "48ffe6e7a60d0a3cb70137e64f3cd361a5f1581385284c60eabad1c23a1fe5bc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -896,7 +896,7 @@
    "method": "M2",
    "repeat": 3,
    "task_id": "NC-A.M2",
-   "task_sha256": "ae5b2bbbd541ae2cf77a378512b07a8dbc45b714a9586b998684d704962b2100",
+   "task_sha256": "48ffe6e7a60d0a3cb70137e64f3cd361a5f1581385284c60eabad1c23a1fe5bc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -907,7 +907,7 @@
    "method": "M3",
    "repeat": 1,
    "task_id": "NC-A.M2",
-   "task_sha256": "ae5b2bbbd541ae2cf77a378512b07a8dbc45b714a9586b998684d704962b2100",
+   "task_sha256": "48ffe6e7a60d0a3cb70137e64f3cd361a5f1581385284c60eabad1c23a1fe5bc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -918,7 +918,7 @@
    "method": "M3",
    "repeat": 2,
    "task_id": "NC-A.M2",
-   "task_sha256": "ae5b2bbbd541ae2cf77a378512b07a8dbc45b714a9586b998684d704962b2100",
+   "task_sha256": "48ffe6e7a60d0a3cb70137e64f3cd361a5f1581385284c60eabad1c23a1fe5bc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -929,7 +929,7 @@
    "method": "M3",
    "repeat": 3,
    "task_id": "NC-A.M2",
-   "task_sha256": "ae5b2bbbd541ae2cf77a378512b07a8dbc45b714a9586b998684d704962b2100",
+   "task_sha256": "48ffe6e7a60d0a3cb70137e64f3cd361a5f1581385284c60eabad1c23a1fe5bc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -973,7 +973,7 @@
    "method": "M2",
    "repeat": 1,
    "task_id": "NC-B.M2",
-   "task_sha256": "c5d1908d9a64182f2cf285cb8d07854ffe94c0f6ebe7031ce20a72843513643f",
+   "task_sha256": "93eb11dc00dd8418a2c2e1d8636b662f05ad1f679c645558dab4c0672416d33d",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -984,7 +984,7 @@
    "method": "M2",
    "repeat": 2,
    "task_id": "NC-B.M2",
-   "task_sha256": "c5d1908d9a64182f2cf285cb8d07854ffe94c0f6ebe7031ce20a72843513643f",
+   "task_sha256": "93eb11dc00dd8418a2c2e1d8636b662f05ad1f679c645558dab4c0672416d33d",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -995,7 +995,7 @@
    "method": "M2",
    "repeat": 3,
    "task_id": "NC-B.M2",
-   "task_sha256": "c5d1908d9a64182f2cf285cb8d07854ffe94c0f6ebe7031ce20a72843513643f",
+   "task_sha256": "93eb11dc00dd8418a2c2e1d8636b662f05ad1f679c645558dab4c0672416d33d",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1006,7 +1006,7 @@
    "method": "M3",
    "repeat": 1,
    "task_id": "NC-B.M2",
-   "task_sha256": "c5d1908d9a64182f2cf285cb8d07854ffe94c0f6ebe7031ce20a72843513643f",
+   "task_sha256": "93eb11dc00dd8418a2c2e1d8636b662f05ad1f679c645558dab4c0672416d33d",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1017,7 +1017,7 @@
    "method": "M3",
    "repeat": 2,
    "task_id": "NC-B.M2",
-   "task_sha256": "c5d1908d9a64182f2cf285cb8d07854ffe94c0f6ebe7031ce20a72843513643f",
+   "task_sha256": "93eb11dc00dd8418a2c2e1d8636b662f05ad1f679c645558dab4c0672416d33d",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1028,7 +1028,7 @@
    "method": "M3",
    "repeat": 3,
    "task_id": "NC-B.M2",
-   "task_sha256": "c5d1908d9a64182f2cf285cb8d07854ffe94c0f6ebe7031ce20a72843513643f",
+   "task_sha256": "93eb11dc00dd8418a2c2e1d8636b662f05ad1f679c645558dab4c0672416d33d",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1072,7 +1072,7 @@
    "method": "M2",
    "repeat": 1,
    "task_id": "NC-C.M2",
-   "task_sha256": "c3fbecfa7be4738d0a5003e866025f0bd40bd4c5b3fa3b201bd2bfb9a787831f",
+   "task_sha256": "8fa8e0d80f43c9440f0222ab94bb30baaacc882ff570a5405bc0fedf7194e8dc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1083,7 +1083,7 @@
    "method": "M2",
    "repeat": 2,
    "task_id": "NC-C.M2",
-   "task_sha256": "c3fbecfa7be4738d0a5003e866025f0bd40bd4c5b3fa3b201bd2bfb9a787831f",
+   "task_sha256": "8fa8e0d80f43c9440f0222ab94bb30baaacc882ff570a5405bc0fedf7194e8dc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1094,7 +1094,7 @@
    "method": "M2",
    "repeat": 3,
    "task_id": "NC-C.M2",
-   "task_sha256": "c3fbecfa7be4738d0a5003e866025f0bd40bd4c5b3fa3b201bd2bfb9a787831f",
+   "task_sha256": "8fa8e0d80f43c9440f0222ab94bb30baaacc882ff570a5405bc0fedf7194e8dc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1105,7 +1105,7 @@
    "method": "M3",
    "repeat": 1,
    "task_id": "NC-C.M2",
-   "task_sha256": "c3fbecfa7be4738d0a5003e866025f0bd40bd4c5b3fa3b201bd2bfb9a787831f",
+   "task_sha256": "8fa8e0d80f43c9440f0222ab94bb30baaacc882ff570a5405bc0fedf7194e8dc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1116,7 +1116,7 @@
    "method": "M3",
    "repeat": 2,
    "task_id": "NC-C.M2",
-   "task_sha256": "c3fbecfa7be4738d0a5003e866025f0bd40bd4c5b3fa3b201bd2bfb9a787831f",
+   "task_sha256": "8fa8e0d80f43c9440f0222ab94bb30baaacc882ff570a5405bc0fedf7194e8dc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
@@ -1127,7 +1127,7 @@
    "method": "M3",
    "repeat": 3,
    "task_id": "NC-C.M2",
-   "task_sha256": "c3fbecfa7be4738d0a5003e866025f0bd40bd4c5b3fa3b201bd2bfb9a787831f",
+   "task_sha256": "8fa8e0d80f43c9440f0222ab94bb30baaacc882ff570a5405bc0fedf7194e8dc",
    "agent": "p7-arm",
    "model": "claude-sdk/claude-opus-5-5",
    "thinking": "high"
