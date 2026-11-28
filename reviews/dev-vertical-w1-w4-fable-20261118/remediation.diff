@@ -1,0 +1,691 @@
+diff --git a/records/dev-vertical-h2-route-20261117/README.md b/records/dev-vertical-h2-route-20261117/README.md
+index 3208810a..4a4fe226 100644
+--- a/records/dev-vertical-h2-route-20261117/README.md
++++ b/records/dev-vertical-h2-route-20261117/README.md
+@@ -195,8 +195,12 @@ Changes (`work-engine-manual-host`, its receiver, harness):
+ - **Plan and admission.** `ProviderPlan.provider` (`openai-codex` by default,
+   or `claude-sdk`), bound by the runtime admission. `claude-sdk` only on the
+   analysis profile, model `claude-haiku-5-5`, priced from Pi's
+-  `anthropic.json`. Full reservation 945 001 µUSD per request (1M context,
+-  128k output, upper tier); Messages analysis budget ceiling 32 000 000 µUSD.
++  `anthropic.json`. Full reservation 1 320 001 µUSD per request (1M context
++  at the dearest input-side rate, which is one-hour cache writes at the upper
++  tier; 128k output at the upper tier); Messages analysis budget ceiling
++  43 000 000 µUSD (32 requests). Revised in the review remediation: the
++  first revision reserved 945 001 and priced every cache write at the
++  catalog's five-minute rate.
+   Pi's own `anthropic` provider is not offered yet. Its client does accept a
+   fetch override (`pi-ai` `api/anthropic-messages.js` passes `options.fetch`
+   to the Anthropic SDK), so the receiver's existing fetch interception could
+@@ -218,18 +222,29 @@ Changes (`work-engine-manual-host`, its receiver, harness):
+   when that crate reaches the base.
+ - **Relay and settlement.** `message_stop` terminal under the same tail rule;
+   usage from `message_start` and the last `message_delta`; settlement per
+-  token class at the catalog tier of all input tokens; the raw stop reason
+-  must agree with the container's.
++  token class at the catalog tier of all input tokens, with cache writes
++  split by lifetime (`cache_creation.ephemeral_5m/1h_input_tokens`; when the
++  split is absent or does not add up, every write counts as one-hour).
++  Five-minute writes are priced at the catalog `cacheWrite` rate and one-hour
++  writes at twice the tier's input rate (Anthropic's price; Claude Code writes
++  one-hour entries). The raw stop reason must agree with the container's.
++  The receipt names the plan's provider (`claude-sdk`) and the Anthropic
++  cost basis.
+ - **Subscription billing guard.** On `https:anthropic-oauth`, a 200 head is
+   relayed only with `anthropic-ratelimit-unified-status` `allowed` or
+-  `allowed_warning` and `...-overage-status` `rejected` or absent; anything
+-  else closes the attempt as uncertain and fails the job. Kept rate-limit,
++  `allowed_warning` and `...-overage-status` `rejected` (a missing header
++  refuses); anything else closes the attempt as uncertain and fails the job.
++  Assumed semantics: an overage status other than `rejected` means extra
++  usage could be drawn, so an organization with extra usage enabled is refused
++  even inside its limits. Kept rate-limit,
+   overage and `request-id` headers are retained in `relay.json`
+   (`headHeaders`).
+ - **Receiver (W2).** Loads the pinned extension; a loopback forwarder is
+   Claude Code's `ANTHROPIC_BASE_URL`, and each request becomes one
+   `provider_fetch` under the current grant. At most one request per grant;
+-  anything outside an open grant is answered locally. A dummy credential
++  anything outside an open grant is answered locally, and those local
++  answers are counted (`counts.forwarderRefused` in the completion frame). The
++  Host completes an analysis job only if the count is 0. A dummy credential
+   sits in the tmpfs `HOME`. Completion is reported only after the relay has
+   settled (Claude Code ends its turn at `message_stop`, before the stream's
+   end). The process exits after close.
+@@ -238,7 +253,10 @@ Changes (`work-engine-manual-host`, its receiver, harness):
+   `..._NO_MODEL_FALLBACK`, `..._DISABLE_MODEL_ACCESS_FALLBACK`,
+   `..._DISABLE_REFUSAL_FALLBACK`, `..._DISABLE_REFUSAL_RETRY`; switches
+   present in the bundled binary). The forwarder refuses a second request per
+-  grant, and the Host refuses `x-stainless-retry-count` other than `0`.
++  grant, and the Host requires `x-stainless-retry-count: 0`. A `max_tokens`
++  stop would make Claude Code continue with a second request in the same
++  turn; the forwarder refuses it and the Host refuses the `length` stop, so
++  such a job fails closed (unlikely at 128k output).
+ - **Harness (W4).** [claude_runtime.py](claude_runtime.py) builds the runtime
+   root: Pi's pinned runtime plus the extension (0.2.4), the Agent SDK, its
+   linux-x64 `claude` binary and the MCP SDK; 19 014 entries, manifest
+@@ -277,6 +295,11 @@ delivery was made, and the answer was produced. A scan of 91 run files found
+ neither the subscription access token nor the refresh token;
+ `private-access` is empty.
+ 
++Under the corrected pricing (review P1-1), the same usage settles at 351, 682
++and 12 375 µUSD. Request 3 alone made 58 868 one-hour cache writes, which
++were understated before; Pi's own reckoning in the same run gives 12 373. The
++live run was not repeated, because the job would still stop at the grammar.
++
+ **The job failed at the lifecycle gate**: "entry claim conflicted with durable
+ state". The model's assistant messages carry `thinking` blocks (requests 2
+ and 3), and the analysis grammar (`lifecycle-store`
+@@ -284,8 +307,30 @@ and 3), and the analysis grammar (`lifecycle-store`
+ receiver pins `thinkingLevel: off`, but Pi's catalog has no `off` level for
+ `claude-haiku-5-5` and marks the model `forceAdaptiveThinking`, so Pi sends
+ adaptive thinking at effort `low`. As far as these catalogs show, thinking
+-cannot be turned off for this model. Running Claude on this profile, for
++cannot be turned off for this model. On this path the operative fact is the
++catalog's `thinkingLevelMap`, which has no `off` entry, so Pi resolves `off`
++to `low` before the provider. Whether the API would accept `thinking:
++disabled` for this model was not tried. Running Claude on this profile, for
+ qualification or H2, therefore needs the analysis grammar to accept
+ `thinking` blocks. That is a `lifecycle-store` change for the
+ research-lifecycle owner, not part of W1-W4. The offline runs pass because
+ the synthetic upstream sends no thinking.
++
++The `https:anthropic-api` failover route for a `claude-sdk` body (an OAuth-shaped
++request: Claude Code's betas, billing system block, `?beta=true`) is untested,
++both offline and live; do not enable it live before one check. The forwarder
++has no receiver unit test; its coverage is the offline sets with the real
++binary.
++
++**Review** ([Fable](../../reviews/dev-vertical-w1-w4-fable-20261118/REVIEW.md)):
++containment and custody accepted, changes required. The remediation addresses
++P1-1 (one-hour cache-write pricing, lifetime split, reservation, ceiling), P1-2
++(receipt provider identity), P2-1 (forwarder refusals counted, completion
++requires none), P2-2 (the guard requires `overage-status: rejected`), P2-3 (the
++retry header must be present and `0`), and the P3 record wording; see the
++[disposition](../../reviews/dev-vertical-w1-w4-fable-20261118/DISPOSITION.md).
++**Run set w4b** on the remediation (`analysis-qualification` `cb64b517…`):
++`ok` passes (each request settled at 675 µUSD; the synthetic upstream sends no
++lifetime split, so writes are priced as one-hour; reserved 1 320 001 per
++attempt; receipt `container_provider_identity: claude-sdk`); `retry-head`
++fails closed as before.
+diff --git a/records/dev-vertical-h2-route-20261117/analyze.py b/records/dev-vertical-h2-route-20261117/analyze.py
+index 2b2beea5..78dc0cb1 100644
+--- a/records/dev-vertical-h2-route-20261117/analyze.py
++++ b/records/dev-vertical-h2-route-20261117/analyze.py
+@@ -38,8 +38,9 @@ if CLAUDE:
+     RUNTIME = RUNTIME_DIR / 'root'
+     CATALOG = 'node_modules/@earendil-works/pi-ai/dist/providers/data/anthropic.json'
+     OBSERVER = REPO / 'rust/target/debug/examples/pi_hosted_messages_observer'
+-    # Full catalog reservation of the 1M-context model: 945 001 per request.
+-    BUDGET = 945_001 * MAX_REQUESTS
++    # Full catalog reservation of the 1M-context model (one-hour cache writes
++    # at the upper tier): 1 320 001 per request.
++    BUDGET = 1_320_001 * MAX_REQUESTS
+ CLAUDE_AUTH = Path.home() / '.claude/.credentials.json'
+ 
+ def sha(b): return hashlib.sha256(b).hexdigest()
+diff --git a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+index 80824d96..e96bfe5e 100644
+--- a/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
++++ b/rust/crates/work-engine-manual-host/receiver/pi-coding.mjs
+@@ -116,8 +116,10 @@ const hostedFrames={open:false,queue:[],waiting:null,
+  read(){if(this.waiting)throw Error('concurrent_read');return this.queue.length?Promise.resolve(this.queue.shift()):new Promise(r=>{this.waiting=r;});}};
+ // claude-sdk forwarder: at most one request per grant, only while the grant is
+ // open and no stream is; anything else is answered here and never leaves.
+-let forwardSlot=null,openForwarded=null;
+-const forwardRefuse=(res,status,message)=>{const b=JSON.stringify({type:'error',error:{type:'forwarder_refused',message}});res.writeHead(status,{'content-type':'application/json','content-length':Buffer.byteLength(b)});res.end(b);};
++let forwardSlot=null,openForwarded=null,forwarderRefused=0;
++// Every locally answered request is counted and reported at completion; the
++// Host completes a job only if there were none.
++const forwardRefuse=(res,status,message)=>{forwarderRefused++;const b=JSON.stringify({type:'error',error:{type:'forwarder_refused',message}});res.writeHead(status,{'content-type':'application/json','content-length':Buffer.byteLength(b)});res.end(b);};
+ const HOP=['host','connection','keep-alive','content-length','accept-encoding','transfer-encoding','proxy-connection','te','upgrade','expect'];
+ const forwarder=claudeSdk?http.createServer((req,res)=>{
+  const chunks=[];let size=0,over=false;
+@@ -435,7 +437,7 @@ try {
+    const history={type:'coding_history',producer:'pi-1.5.0',sessionId:session.sessionId,invocationId:op.invocationId,messages:session.messages,branch:session.sessionManager.getBranch(),header:session.sessionManager.getHeader(),leafId:session.sessionManager.getLeafId(),snapshot:snapshot()};
+    writeFileSync(`/export/coding-history-${op.invocationId}.json`,JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit(history);
+   }
+-  const history={schema,provider:liveBridge?config.provider:'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets}};
++  const history={schema,provider:liveBridge?config.provider:'disabled_fixture',model:liveBridge?model.id:null,sessionId:session.sessionId,messages:session.messages,entries:session.sessionManager.getEntries(),header:session.sessionManager.getHeader(),counts:{providerRequests:bridgeCalls,resets:bridgeResets,...(claudeSdk?{forwarderRefused}:{})}};
+   writeFileSync('/export/coding-native-history.json',JSON.stringify(history)+'\n',{flag:'wx',mode:0o600});emit({type:'complete',provider:history.provider,counts:history.counts});
+  }else{
+  emit({type:'ready',tools:session.getActiveToolNames(),...(live?{model:{id:model.id,provider:model.provider,api:model.api,contextWindow:model.contextWindow,maxTokens:model.maxTokens,cost:model.cost}}:{})});
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs b/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
+index 29d20fd9..8fcd42eb 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_analysis.rs
+@@ -329,6 +329,26 @@ impl Host {
+         }
+         Ok(())
+     }
++    /// The counts an analysis completion must report. On `claude-sdk` the
++    /// receiver also reports requests its forwarder answered locally (outside
++    /// a grant, a second request per grant, another path): none may occur in
++    /// a completed job, since each is a request Claude Code made that no Host
++    /// attempt accounts for.
++    fn analysis_counts(&self) -> Value {
++        let state = self.journal.coding.as_ref().unwrap();
++        let claude = self
++            .journal
++            .job
++            .coding
++            .as_ref()
++            .and_then(|p| p.provider.as_ref())
++            .is_some_and(|p| p.provider == "claude-sdk");
++        if claude {
++            json!({"providerRequests":state.provider_requests.len(),"resets":0,"forwarderRefused":0})
++        } else {
++            json!({"providerRequests":state.provider_requests.len(),"resets":0})
++        }
++    }
+     /// Completion of an analysis job: every Host delivery resolved and matched
+     /// natively, every provider request settled, counts as reported.
+     pub(super) fn analysis_complete(&self, frame: &Value) -> Result<()> {
+@@ -343,8 +363,7 @@ impl Host {
+                 .provider_requests
+                 .values()
+                 .any(|r| r.settled_microusd.is_none())
+-            || frame["counts"]
+-                != json!({"providerRequests":state.provider_requests.len(),"resets":0})
++            || frame["counts"] != self.analysis_counts()
+         {
+             return refuse("analysis completion lacks settled requests or native tool evidence");
+         }
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+index 66e7ac1b..dd0ec7bd 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_hosted.rs
+@@ -762,10 +762,7 @@ impl Host {
+             // W3: a client-side retry is never dispatched; every upstream
+             // request is one Host attempt (the receiver also disables Claude
+             // Code's retries and admits one request per grant).
+-            if headers
+-                .get("x-stainless-retry-count")
+-                .is_some_and(|v| v != "0")
+-            {
++            if headers.get("x-stainless-retry-count").map(String::as_str) != Some("0") {
+                 return refuse("provider fetch is a client retry");
+             }
+             self.messages_policy(&plan, &parsed, analysis)?;
+@@ -995,7 +992,7 @@ impl Host {
+             Decision::Unavailable(reason) => return self.hosted_unavailable(s, reason),
+         };
+         let route = routes.routes[index].clone();
+-        let reserve = provider::full_reservation(&plan.selected()?)?;
++        let reserve = plan.request_reservation()?;
+         let state = self.journal.coding.as_mut().unwrap();
+         let attempt = match provider::reserve_attempt(
+             &mut state.provider_requests,
+@@ -1394,7 +1391,8 @@ impl Host {
+                     usage["model"].as_str().map(str::to_owned),
+                     json!({"eventType":"message_stop","stopReason":usage["stopReason"],
+                     "usage":{"input_tokens":usage["inputTokens"],"cache_creation_input_tokens":usage["cacheCreationInputTokens"],
+-                    "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"]}}),
++                    "cache_read_input_tokens":usage["cacheReadInputTokens"],"output_tokens":usage["outputTokens"],
++                    "cache_creation_5m_input_tokens":usage["cacheCreation5mInputTokens"],"cache_creation_1h_input_tokens":usage["cacheCreation1hInputTokens"]}}),
+                 ),
+             };
+             if let Some(model) = model {
+@@ -1604,10 +1602,13 @@ impl Host {
+     /// Claude subscription routes: a successful response is relayed only if
+     /// its head shows the request inside the plan's limits
+     /// (`anthropic-ratelimit-unified-status` `allowed` or `allowed_warning`)
+-    /// with extra usage unavailable (`...-overage-status` `rejected` or
+-    /// absent). Anything else (including headers that are missing) stops the
+-    /// job before more requests are made: such a request may draw on extra
+-    /// usage. The headers are retained in the attempt's `relay.json`.
++    /// with extra usage unavailable (`...-overage-status` `rejected`).
++    /// Anything else, including a missing header, stops the job before more
++    /// requests are made. Assumed semantics: `overage-status` other than
++    /// `rejected` means extra usage could be drawn, whether or not this
++    /// request drew it, so an organization with extra usage enabled is
++    /// refused even inside its limits. The headers are retained in the
++    /// attempt's `relay.json`.
+     fn subscription_guard(&self, s: &Stream, attempt: u64) -> std::result::Result<(), String> {
+         let StreamPhase::Active { session, .. } = &s.phase else {
+             return Ok(());
+@@ -1639,9 +1640,7 @@ impl Host {
+         };
+         let status = header("anthropic-ratelimit-unified-status");
+         let overage = header("anthropic-ratelimit-unified-overage-status");
+-        if matches!(status, Some("allowed" | "allowed_warning"))
+-            && matches!(overage, None | Some("rejected"))
+-        {
++        if matches!(status, Some("allowed" | "allowed_warning")) && overage == Some("rejected") {
+             Ok(())
+         } else {
+             Err(format!(
+@@ -2690,7 +2689,8 @@ mod tests {
+             (
+                 "message_start",
+                 json!({"type":"message_start","message":{"id":"msg_1","model":HAIKU,"usage":
+-                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":1}}}),
++                {"input_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":1,
++                "cache_creation":{"ephemeral_5m_input_tokens":400,"ephemeral_1h_input_tokens":600}}}}),
+             ),
+             (
+                 "content_block_start",
+@@ -2759,7 +2759,8 @@ mod tests {
+         assert_eq!(
+             r.raw_terminal.as_ref().unwrap(),
+             &json!({"eventType":"message_stop","stopReason":"end_turn","usage":{"input_tokens":10,
+-                "cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50}})
++                "cache_creation_input_tokens":1000,"cache_read_input_tokens":2000,"output_tokens":50,
++                "cache_creation_5m_input_tokens":400,"cache_creation_1h_input_tokens":600}})
+         );
+         let relay: Value = serde_json::from_slice(
+             &fs::read(dir.path().join("coding-hosted-1-2.relay.json")).unwrap(),
+@@ -2785,22 +2786,51 @@ mod tests {
+             json!({"type":"provider_complete","id":1,"stopReason":"stop","usage":{}}),
+         )
+         .unwrap();
+-        // 10 x 0.1 + 1000 x 0.125 + 2000 x 0.01 + 50 x 0.5 = 171, plus one.
+-        assert_eq!(request(&h).settled_microusd, Some(172));
++        // 10 x 0.1 + 400 x 0.125 (5-minute writes) + 600 x 0.2 (one-hour
++        // writes, twice the input rate) + 2000 x 0.01 + 50 x 0.5 = 216, plus one.
++        assert_eq!(request(&h).settled_microusd, Some(217));
+     }
+     #[test]
+     fn messages_cost_uses_the_tier_of_all_input_tokens() {
+         let model = json!({"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,
+             "tiers":[{"inputTokensAbove":100000,"input":0.5,"output":2.5,"cacheRead":0.05,"cacheWrite":0.625}]}});
++        let t = |write_5m, write_1h, read, output| provider::MessagesTokens {
++            input: 0,
++            write_5m,
++            write_1h,
++            read,
++            output,
++        };
+         assert_eq!(
+-            provider::messages_cost_for_tests(&model, 0, 0, 100_000, 0),
++            provider::messages_cost_for_tests(&model, t(0, 0, 100_000, 0)),
+             1001
+         );
+         // Cache reads push the request over the threshold: every class at tier rates.
+         assert_eq!(
+-            provider::messages_cost_for_tests(&model, 0, 0, 100_001, 10),
++            provider::messages_cost_for_tests(&model, t(0, 0, 100_001, 10)),
+             5001 + 25 + 1
+         );
++        // One-hour writes cost twice the tier's input rate; five-minute writes
++        // the catalog cacheWrite rate.
++        assert_eq!(
++            provider::messages_cost_for_tests(&model, t(0, 1000, 0, 0)),
++            201
++        );
++        assert_eq!(
++            provider::messages_cost_for_tests(&model, t(1000, 0, 0, 0)),
++            126
++        );
++        assert_eq!(
++            provider::messages_cost_for_tests(&model, t(0, 100_001, 0, 0)),
++            100_002
++        );
++        // Worst case: the whole window at the dearest input-side rate (one-hour
++        // writes at the upper tier) and the output bound at the upper tier.
++        let full = json!({"contextWindow":1000000,"maxTokens":128000,"cost":model["cost"]});
++        assert_eq!(
++            provider::messages_full_reservation_for_tests(&full),
++            1_320_001
++        );
+     }
+     #[test]
+     fn messages_body_policy_and_url_are_enforced() {
+@@ -2846,6 +2876,14 @@ mod tests {
+         let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
+         f["headers"]["x-stainless-retry-count"] = json!("1");
+         assert!(push(&mut h, &mut w, f).is_err(), "client retry");
++        let (_dir, mut h, mut w) = messages_host(vec![]);
++        let g = messages_grant(&mut h, &mut w);
++        let mut f = messages_fetch(&g, &serde_json::to_vec(&ok).unwrap());
++        f["headers"]
++            .as_object_mut()
++            .unwrap()
++            .remove("x-stainless-retry-count");
++        assert!(push(&mut h, &mut w, f).is_err(), "retry count absent");
+         for url in [
+             "https://api.anthropic.com/v1/messages?beta=false",
+             "https://api.anthropic.com/v1/complete",
+@@ -2934,6 +2972,36 @@ mod tests {
+             (u["completed"].clone(), u["failed"].clone()),
+             (json!(false), json!("overloaded_error"))
+         );
++        // Writes split by lifetime only when the breakdown adds up; otherwise
++        // all writes count as one-hour.
++        let with = |breakdown: Value| {
++            let mut s = start.clone();
++            s["message"]["usage"]["cache_creation_input_tokens"] = json!(10);
++            s["message"]["usage"]["cache_creation"] = breakdown;
++            stream::usage_for(
++                stream::Wire::Messages,
++                sse(&[s, delta.clone(), json!({"type":"message_stop"})]).as_bytes(),
++            )
++        };
++        let split = |u: Value| {
++            (
++                u["cacheCreation5mInputTokens"].clone(),
++                u["cacheCreation1hInputTokens"].clone(),
++            )
++        };
++        assert_eq!(
++            split(with(
++                json!({"ephemeral_5m_input_tokens":4,"ephemeral_1h_input_tokens":6})
++            )),
++            (json!(4), json!(6))
++        );
++        assert_eq!(
++            split(with(
++                json!({"ephemeral_5m_input_tokens":9,"ephemeral_1h_input_tokens":6})
++            )),
++            (json!(0), json!(10))
++        );
++        assert_eq!(split(with(Value::Null)), (json!(0), json!(10)));
+         let unterminated = sse(&[start, delta]);
+         assert_eq!(
+             stream::usage_for(stream::Wire::Messages, unterminated.as_bytes())["completed"],
+@@ -2946,9 +3014,10 @@ mod tests {
+         for (headers, ok) in [
+             (allowed, true),
+             (
+-                "anthropic-ratelimit-unified-status: allowed_warning\r\n",
++                "anthropic-ratelimit-unified-status: allowed_warning\r\nanthropic-ratelimit-unified-overage-status: rejected\r\n",
+                 true,
+             ),
++            ("anthropic-ratelimit-unified-status: allowed\r\n", false),
+             (
+                 "anthropic-ratelimit-unified-status: allowed\r\nanthropic-ratelimit-unified-overage-status: allowed\r\n",
+                 false,
+diff --git a/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs b/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+index b32b79cb..2b0fd20f 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_coding_provider.rs
+@@ -16,8 +16,9 @@ fn default_provider() -> String {
+     DEFAULT_PROVIDER.into()
+ }
+ /// Analysis budget ceiling for the Messages family: full catalog reservations
+-/// of a 1M-context Claude model for the profile's request maximum.
+-const MESSAGES_ANALYSIS_BUDGET: u64 = 32_000_000;
++/// of a 1M-context Claude model (1 320 001 µUSD each, one-hour cache writes at
++/// the upper tier) for the profile's 32-request maximum.
++const MESSAGES_ANALYSIS_BUDGET: u64 = 43_000_000;
+ /// Public Pi configuration staged read-only for the container. Provider
+ /// access is not a lane input: the Host's transport holds it.
+ #[derive(Clone, Serialize, Deserialize)]
+@@ -482,6 +483,14 @@ impl ProviderPlan {
+         }
+         Ok(selected)
+     }
++    /// Full catalog reservation of one request of the plan's model.
++    pub(super) fn request_reservation(&self) -> Result<u64> {
++        let model = self.selected()?;
++        match self.wire_checked()? {
++            crate::pi_stream::Wire::Responses => full_reservation(&model),
++            crate::pi_stream::Wire::Messages => messages_full_reservation(&model),
++        }
++    }
+     /// Whether the receiver's native model is the pinned catalog model: same
+     /// id, limits and prices; provider and API as the plan's Pi provider
+     /// registers them.
+@@ -500,7 +509,7 @@ impl ProviderPlan {
+     /// Pure preparation check over the pinned public catalog; grants no entry
+     /// and neither inspects nor opens native credential references.
+     pub fn reservation_microusd(&self) -> Result<u64> {
+-        let reserve = full_reservation(&self.selected()?)?;
++        let reserve = self.request_reservation()?;
+         let total = reserve
+             .checked_mul(self.max_requests.into())
+             .ok_or_else(|| Error::Refused("catalog reservation overflow".into()))?;
+@@ -657,41 +666,55 @@ const RAW_COST_SATURATED: u64 = 1_000_000_001;
+ fn raw_cost(model: &Value, input: u64, output: u64) -> u64 {
+     cost(model, input, output).unwrap_or(RAW_COST_SATURATED)
+ }
++/// Token counts of one Messages response, by price class.
++#[derive(Clone, Copy, Debug, Default)]
++pub(super) struct MessagesTokens {
++    pub input: u64,
++    /// Cache writes with the five-minute lifetime.
++    pub write_5m: u64,
++    /// Cache writes with the one-hour lifetime (Claude Code's default).
++    pub write_1h: u64,
++    pub read: u64,
++    pub output: u64,
++}
++fn catalog_rate(cost: &Value, key: &str) -> Result<f64> {
++    cost[key]
++        .as_f64()
++        .filter(|v| v.is_finite() && *v >= 0.0 && *v <= 1000.0)
++        .ok_or_else(|| Error::Refused("catalog rate absent/invalid".into()))
++}
++/// Anthropic prices one-hour cache writes at twice the input rate; Pi's
++/// catalog `cacheWrite` is the five-minute rate.
++const ONE_HOUR_WRITE_FACTOR: f64 = 2.0;
+ /// Messages usage priced per token class at the catalog rates of the tier
+ /// the request falls in. The tier is chosen by all input tokens (uncached,
+ /// cache writes and cache reads), so a request is never priced below its
+ /// tier. Rounded up, plus one microUSD, like [`cost`].
+-fn messages_cost(
+-    model: &Value,
+-    input: u64,
+-    cache_write: u64,
+-    cache_read: u64,
+-    output: u64,
+-) -> Result<u64> {
+-    let rate = |cost: &Value, key: &str| {
+-        cost[key]
+-            .as_f64()
+-            .filter(|v| v.is_finite() && *v >= 0.0 && *v <= 1000.0)
+-            .ok_or_else(|| Error::Refused("catalog rate absent/invalid".into()))
+-    };
+-    let all_input = input.saturating_add(cache_write).saturating_add(cache_read);
++fn messages_cost(model: &Value, t: MessagesTokens) -> Result<u64> {
++    let all_input = t
++        .input
++        .saturating_add(t.write_5m)
++        .saturating_add(t.write_1h)
++        .saturating_add(t.read);
+     let mut tier = &model["cost"];
+     let mut above = 0u64;
+     if let Some(tiers) = model["cost"]["tiers"].as_array() {
+-        for t in tiers {
+-            let threshold = t["inputTokensAbove"]
++        for candidate in tiers {
++            let threshold = candidate["inputTokensAbove"]
+                 .as_u64()
+                 .ok_or_else(|| Error::Refused("catalog tier threshold absent".into()))?;
+             if all_input > threshold && threshold >= above {
+-                tier = t;
++                tier = candidate;
+                 above = threshold;
+             }
+         }
+     }
+-    let value = (input as f64 * rate(tier, "input")?
+-        + cache_write as f64 * rate(tier, "cacheWrite")?
+-        + cache_read as f64 * rate(tier, "cacheRead")?
+-        + output as f64 * rate(tier, "output")?)
++    let input = catalog_rate(tier, "input")?;
++    let value = (t.input as f64 * input
++        + t.write_5m as f64 * catalog_rate(tier, "cacheWrite")?
++        + t.write_1h as f64 * input * ONE_HOUR_WRITE_FACTOR
++        + t.read as f64 * catalog_rate(tier, "cacheRead")?
++        + t.output as f64 * catalog_rate(tier, "output")?)
+     .ceil();
+     if !value.is_finite() || !(0.0..=1_000_000_000.0).contains(&value) {
+         return refuse("catalog cost overflow");
+@@ -699,16 +722,43 @@ fn messages_cost(
+     Ok(value as u64 + 1)
+ }
+ #[cfg(test)]
+-pub(super) fn messages_cost_for_tests(
+-    model: &Value,
+-    input: u64,
+-    cache_write: u64,
+-    cache_read: u64,
+-    output: u64,
+-) -> u64 {
+-    messages_cost(model, input, cache_write, cache_read, output).unwrap()
++pub(super) fn messages_cost_for_tests(model: &Value, t: MessagesTokens) -> u64 {
++    messages_cost(model, t).unwrap()
+ }
+-pub(super) fn full_reservation(model: &Value) -> Result<u64> {
++#[cfg(test)]
++pub(super) fn messages_full_reservation_for_tests(model: &Value) -> u64 {
++    messages_full_reservation(model).unwrap()
++}
++/// Worst-case Messages request: the whole context window at the highest
++/// input-side rate of any tier (including one-hour cache writes) and the
++/// output bound at the highest output rate.
++fn messages_full_reservation(model: &Value) -> Result<u64> {
++    let (window, out) = catalog_bounds(model)?;
++    let mut input = 0.0_f64;
++    let mut output = 0.0_f64;
++    let mut entries = vec![&model["cost"]];
++    if let Some(tiers) = model["cost"]["tiers"].as_array() {
++        entries.extend(tiers);
++    }
++    for cost in entries {
++        let base = catalog_rate(cost, "input")?;
++        for v in [
++            base,
++            base * ONE_HOUR_WRITE_FACTOR,
++            catalog_rate(cost, "cacheRead")?,
++            catalog_rate(cost, "cacheWrite")?,
++        ] {
++            input = input.max(v);
++        }
++        output = output.max(catalog_rate(cost, "output")?);
++    }
++    let value = (window as f64 * input + out as f64 * output).ceil();
++    if !value.is_finite() || !(0.0..=1_000_000_000.0).contains(&value) {
++        return refuse("catalog cost overflow");
++    }
++    Ok(value as u64 + 1)
++}
++fn catalog_bounds(model: &Value) -> Result<(u64, u64)> {
+     let input = model["contextWindow"]
+         .as_u64()
+         .filter(|v| *v > 0 && *v <= 2_000_000)
+@@ -717,6 +767,10 @@ pub(super) fn full_reservation(model: &Value) -> Result<u64> {
+         .as_u64()
+         .filter(|v| *v > 0 && *v <= input)
+         .ok_or_else(|| Error::Refused("catalog output bound absent".into()))?;
++    Ok((input, output))
++}
++pub(super) fn full_reservation(model: &Value) -> Result<u64> {
++    let (input, output) = catalog_bounds(model)?;
+     cost(model, input, output)
+ }
+ impl Host {
+@@ -797,7 +851,7 @@ impl Host {
+                 {
+                     return refuse("provider identity/context/unknown reservation conflict");
+                 }
+-                let reserve = full_reservation(&model)?;
++                let reserve = plan.request_reservation()?;
+                 let spent: u64 = state
+                     .provider_requests
+                     .values()
+@@ -939,22 +993,29 @@ impl Host {
+                                     _ => false,
+                                 }
+                         });
++                        // Cache writes split by lifetime must add up to the total.
+                         let measured = raw.and_then(|raw| {
+                             let u = &raw["usage"];
+-                            Some((
+-                                u["input_tokens"].as_u64()?,
+-                                u["cache_creation_input_tokens"].as_u64()?,
+-                                u["cache_read_input_tokens"].as_u64()?,
+-                                u["output_tokens"].as_u64()?,
+-                            ))
++                            let t = MessagesTokens {
++                                input: u["input_tokens"].as_u64()?,
++                                write_5m: u["cache_creation_5m_input_tokens"].as_u64()?,
++                                write_1h: u["cache_creation_1h_input_tokens"].as_u64()?,
++                                read: u["cache_read_input_tokens"].as_u64()?,
++                                output: u["output_tokens"].as_u64()?,
++                            };
++                            (t.write_5m.checked_add(t.write_1h)?
++                                == u["cache_creation_input_tokens"].as_u64()?)
++                            .then_some(t)
+                         });
+                         match measured {
+                             None => Err("raw completed stop reason/usage unavailable"),
+-                            Some((input, cache_write, cache_read, output)) => Ok((
+-                                messages_cost(&model, input, cache_write, cache_read, output)
+-                                    .unwrap_or(RAW_COST_SATURATED),
+-                                input.saturating_add(cache_write).saturating_add(cache_read),
+-                                output,
++                            Some(t) => Ok((
++                                messages_cost(&model, t).unwrap_or(RAW_COST_SATURATED),
++                                t.input
++                                    .saturating_add(t.write_5m)
++                                    .saturating_add(t.write_1h)
++                                    .saturating_add(t.read),
++                                t.output,
+                             )),
+                         }
+                     }
+diff --git a/rust/crates/work-engine-manual-host/src/pi_docker.rs b/rust/crates/work-engine-manual-host/src/pi_docker.rs
+index 734e2115..6ece4a42 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_docker.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_docker.rs
+@@ -1379,11 +1379,16 @@ impl Host {
+                     .collect();
+                 value["provider"] = json!("hosted-routes");
+                 value["provider_attempts"] = json!(attempts);
+-                value["container_provider_identity"] = json!("openai-codex");
++                value["container_provider_identity"] = json!(plan.provider);
+                 value["model"] = json!(plan.model);
+-                value["cost_evidence"] = json!(
+-                    "pinned openai-codex catalog rates applied to Host-observed raw usage on every route; a proxy, not provider billing"
+-                );
++                value["cost_evidence"] = json!(match plan.wire() {
++                    Some(crate::pi_stream::Wire::Messages) => {
++                        "pinned Pi anthropic catalog rates (one-hour cache writes at twice the input rate) applied per token class to Host-observed raw usage on every route; a proxy, not provider billing"
++                    }
++                    _ => {
++                        "pinned openai-codex catalog rates applied to Host-observed raw usage on every route; a proxy, not provider billing"
++                    }
++                });
+                 value["hosted_transport"] = json!(coding.hosted_transport);
+             }
+         }
+diff --git a/rust/crates/work-engine-manual-host/src/pi_stream.rs b/rust/crates/work-engine-manual-host/src/pi_stream.rs
+index 0a575023..3c0faca1 100644
+--- a/rust/crates/work-engine-manual-host/src/pi_stream.rs
++++ b/rust/crates/work-engine-manual-host/src/pi_stream.rs
+@@ -513,6 +513,24 @@ fn messages_usage(events: &[Value]) -> Value {
+     let cache_write = pick("cache_creation_input_tokens");
+     let cache_read = pick("cache_read_input_tokens");
+     let output = last["output_tokens"].clone();
++    // Cache writes by lifetime: the breakdown is used only when it adds up to
++    // the total; otherwise every write counts as one-hour (the dearer class).
++    let breakdown = if last["cache_creation"].is_object() {
++        &last["cache_creation"]
++    } else {
++        &first["cache_creation"]
++    };
++    let (write_5m, write_1h) = match cache_write.as_u64() {
++        Some(total) => {
++            let five = breakdown["ephemeral_5m_input_tokens"].as_u64();
++            let hour = breakdown["ephemeral_1h_input_tokens"].as_u64();
++            match (five, hour) {
++                (Some(f), Some(h)) if f.checked_add(h) == Some(total) => (json!(f), json!(h)),
++                _ => (json!(0), json!(total)),
++            }
++        }
++        None => (Value::Null, Value::Null),
++    };
+     let observed = [&input, &cache_write, &cache_read, &output]
+         .iter()
+         .all(|v| v.is_u64());
+@@ -525,6 +543,8 @@ fn messages_usage(events: &[Value]) -> Value {
+         "stopReason": delta["delta"]["stop_reason"],
+         "inputTokens": input,
+         "cacheCreationInputTokens": cache_write,
++        "cacheCreation5mInputTokens": write_5m,
++        "cacheCreation1hInputTokens": write_1h,
+         "cacheReadInputTokens": cache_read,
+         "outputTokens": output,
+     })
